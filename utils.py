@@ -107,54 +107,43 @@ def _to_bit(v) -> int:
 
 
 # ---------- USERS API ----------
-def get_user(username: str):
-    """Fetch a single user row by username."""
-    conn = connect_to_database()
-    if not conn:
-        return None
-
-    cur = None
+def get_user(username):
     try:
-        cur = conn.cursor()
-        cur.execute(
-            """
-            SELECT
-                id,
-                username,
-                password,
-                role,
-                can_access_internal_store_transfer,
-                can_access_assortment,
-                can_access_ip
-            FROM dbo.users
-            WHERE username = ?
-            """,
-            username,
-        )
-        row = cur.fetchone()
-    except Exception as e:
-        print(f"[DB] get_user error: {e}", file=sys.stderr)
-        return None
-    finally:
-        try:
-            if cur:
-                cur.close()
-            conn.close()
-        except Exception:
-            pass
+        conn = connect_to_database()
+        if not conn:
+            print("[LOGIN] DB connection failed!")
+            return None
 
-    if row:
-        return {
-            "id": row.id,
-            "username": row.username,
-            "password": row.password,
-            "role": row.role,
-            "can_access_internal_store_transfer": bool(row.can_access_internal_store_transfer),
-            "can_access_assortment": bool(row.can_access_assortment),
-            "can_access_ip": bool(row.can_access_ip),
-        }
-    else:
+        print("[LOGIN] Connected. Querying users...")
+
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, username, password, role, "
+            "can_access_internal_store_transfer, can_access_assortment, can_access_ip "
+            "FROM dbo.users WHERE username = ?", username.strip()
+        )
+        row = cursor.fetchone()
+        conn.close()
+
+        print("[LOGIN] Query returned:", row)
+
+        if row:
+            return {
+                "id": row.id,
+                "username": row.username,
+                "password": row.password,
+                "role": row.role,
+                "can_access_internal_store_transfer": bool(row.can_access_internal_store_transfer),
+                "can_access_assortment": bool(row.can_access_assortment),
+                "can_access_ip": bool(row.can_access_ip),
+            }
+        else:
+            return None
+
+    except Exception as e:
+        print("[LOGIN] ERROR:", e)
         return None
+
 
 
 def add_user(username: str, password: str, role: str, rights: dict | None = None) -> bool:
@@ -276,3 +265,4 @@ def verify_password(plain_password: str, stored_password: str) -> bool:
         except Exception:
             return False
     return plain_password == stored_password
+
