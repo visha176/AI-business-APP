@@ -47,36 +47,39 @@ def load_data_from_db(
     except Exception as e:
         st.error(f"API Error while loading data: {e}")
         return pd.DataFrame()
-@app.post("/unique_values")
-def unique_values():
-    data = request.get_json() or {}
-    user_id = data.get("user_id")
-    column = data.get("column")
 
-    if not user_id or not column:
-        return jsonify({"success": False, "error": "user_id and column required"}), 400
 
-    # Safety: bracket the column name
-    sql = f"""
-        SELECT DISTINCT [{column}] AS val
-        FROM dbo.vw_StoreDesignSummary
-        WHERE user_id = %s
+def get_unique_values(column_name: str):
     """
+    Call Flask /unique_values endpoint to get filter values.
+    """
+    if "user_id" not in st.session_state:
+        st.error("User ID not found.")
+        return ["All"]
 
     try:
-        conn = get_db_conn()
-        cur = conn.cursor()
-        cur.execute(sql, (user_id,))
-        rows = cur.fetchall()
-        conn.close()
+        resp = requests.post(
+            f"{API_URL}/unique_values",
+            json={
+                "user_id": st.session_state["user_id"],
+                "column": column_name,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        result = resp.json()
 
-        values = [r[0] for r in rows if r[0] is not None]
-        values = sorted(map(str, values))
+        if not result.get("success"):
+            st.error(f"API error (unique_values): {result.get('error', 'Unknown error')}")
+            return ["All"]
 
-        return jsonify({"success": True, "values": values})
+        values = result.get("values", [])
+        return ["All"] + values
 
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        st.error(f"API Error while loading values for {column_name}: {e}")
+        return ["All"]
+
 
 
 
@@ -483,5 +486,6 @@ def show_Network():
 if __name__ == "__main__":
 
     show_Network()
+
 
 
