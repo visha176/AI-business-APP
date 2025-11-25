@@ -1,4 +1,3 @@
-curl
-apt-transport-https
 unixodbc
 unixodbc-dev
+msodbcsql17
