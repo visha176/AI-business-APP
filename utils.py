@@ -1,4 +1,5 @@
 # utils.py — SQL Server only (pyodbc)
+import streamlit as st
 import os
 import json
 import sys
@@ -13,12 +14,26 @@ except Exception:
 
 
 # ---------- CONFIG ----------
-# Reads ./secrets.json by default; override with env var DB_CONFIG_JSON
+# Reads ./secrets.json by default; or Streamlit Cloud secrets if available
 CONFIG_PATH = os.getenv("DB_CONFIG_JSON", os.path.join(os.getcwd(), "secrets.json"))
 
 
 def _load_cfg() -> dict:
-    """Load the JSON config (once)."""
+    """Load DB config.
+
+    Priority:
+    1) st.secrets["mssql"] (Streamlit Cloud)
+    2) secrets.json (local file)
+    """
+    # 1) Try Streamlit secrets (Streamlit Cloud)
+    try:
+        if "mssql" in st.secrets:
+            # st.secrets is a mapping; convert to normal dict
+            return dict(st.secrets["mssql"])
+    except Exception as e:
+        print(f"[DB] No st.secrets['mssql']: {e}", file=sys.stderr)
+
+    # 2) Fallback: local JSON file (for local dev)
     try:
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -36,9 +51,9 @@ def _build_conn_str(cfg: dict) -> str:
     """
     Build a robust ODBC connection string.
     - Accepts either "server": "HOST,PORT" or "server": "HOST" + "port": 1433
-    - Adds Encrypt/TrustServerCertificate for ODBC Driver 18
+    - Adds Encrypt/TrustServerCertificate for ODBC Driver 17/18
     """
-    driver = cfg.get("driver", "ODBC Driver 18 for SQL Server")
+    driver = cfg.get("driver", "ODBC Driver 17 for SQL Server")
     server = str(cfg.get("server", "")).strip()
     port = cfg.get("port")
 
@@ -46,18 +61,24 @@ def _build_conn_str(cfg: dict) -> str:
     if port and ("," not in server):
         server = f"{server},{port}"
 
-    database = cfg.get("database", "").strip()
-    uid = cfg.get("username", "").strip()
+    database = str(cfg.get("database", "")).strip()
+    uid = str(cfg.get("username", "")).strip()
     pwd = cfg.get("password", "")
-    encrypt = "yes" if cfg.get("encrypt", True) else "no"
-    trust = "yes" if cfg.get("trust_server_certificate", True) else "no"
+
+    encrypt_flag = cfg.get("encrypt", True)
+    trust_flag = cfg.get("trust_server_certificate", True)
+    encrypt = "yes" if bool(encrypt_flag) else "no"
+    trust = "yes" if bool(trust_flag) else "no"
+
     timeout = int(cfg.get("timeout", 15))  # seconds
 
-    missing = [k for k in ("server", "database", "username", "password") if not cfg.get(k)]
+    missing = [
+        k for k in ("server", "database", "username", "password")
+        if not cfg.get(k)
+    ]
     if missing:
-        raise ValueError(f"Missing mssql config keys in {CONFIG_PATH}: {missing}")
+        raise ValueError(f"Missing mssql config keys: {missing}")
 
-    # NB: database name with spaces is fine in ODBC
     return (
         f"DRIVER={{{driver}}};"
         f"SERVER={server};"
@@ -71,7 +92,7 @@ def _build_conn_str(cfg: dict) -> str:
 
 
 def connect_to_database():
-    """Open a SQL Server connection using pyodbc and secrets.json."""
+    """Open a SQL Server connection using pyodbc and config (st.secrets or secrets.json)."""
     try:
         conn_str = _build_conn_str(CFG)
         return pyodbc.connect(conn_str)
@@ -86,28 +107,41 @@ def _to_bit(v) -> int:
 
 
 # ---------- USERS API ----------
-def get_user(username):
-    import pyodbc
-    import json
+def get_user(username: str):
+    """Fetch a single user row by username."""
+    conn = connect_to_database()
+    if not conn:
+        return None
 
-    with open("secrets.json", "r") as f:
-        creds = json.load(f)["mssql"]
-
-    conn_str = (
-        f"DRIVER={{{creds['driver']}}};"
-        f"SERVER={creds['server']};"
-        f"DATABASE={creds['database']};"
-        f"UID={creds['username']};"
-        f"PWD={creds['password']};"
-        f"Encrypt={'yes' if creds['encrypt'] else 'no'};"
-        f"TrustServerCertificate={'yes' if creds['trust_server_certificate'] else 'no'};"
-    )
-
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, username, password, role, can_access_internal_store_transfer, can_access_assortment, can_access_ip FROM dbo.users WHERE username = ?", username)
-    row = cursor.fetchone()
-    conn.close()
+    cur = None
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT
+                id,
+                username,
+                password,
+                role,
+                can_access_internal_store_transfer,
+                can_access_assortment,
+                can_access_ip
+            FROM dbo.users
+            WHERE username = ?
+            """,
+            username,
+        )
+        row = cur.fetchone()
+    except Exception as e:
+        print(f"[DB] get_user error: {e}", file=sys.stderr)
+        return None
+    finally:
+        try:
+            if cur:
+                cur.close()
+            conn.close()
+        except Exception:
+            pass
 
     if row:
         return {
@@ -121,7 +155,6 @@ def get_user(username):
         }
     else:
         return None
-
 
 
 def add_user(username: str, password: str, role: str, rights: dict | None = None) -> bool:
