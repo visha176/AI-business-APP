@@ -28,8 +28,20 @@ def _load_cfg() -> dict:
     # 1) Try Streamlit secrets (Streamlit Cloud)
     try:
         if "mssql" in st.secrets:
-            # st.secrets is a mapping; convert to normal dict
-            return dict(st.secrets["mssql"])
+            cfg = dict(st.secrets["mssql"])
+            # small debug summary
+            print(
+                "[DB] Loaded st.secrets['mssql']:",
+                {
+                    "server": cfg.get("server"),
+                    "database": cfg.get("database"),
+                    "driver": cfg.get("driver"),
+                    "encrypt": cfg.get("encrypt"),
+                    "trust_server_certificate": cfg.get("trust_server_certificate"),
+                },
+                file=sys.stderr,
+            )
+            return cfg
     except Exception as e:
         print(f"[DB] No st.secrets['mssql']: {e}", file=sys.stderr)
 
@@ -37,13 +49,27 @@ def _load_cfg() -> dict:
     try:
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-            return data.get("mssql", {})
+            cfg = data.get("mssql", {})
+            print(
+                f"[DB] Loaded {CONFIG_PATH}:",
+                {
+                    "server": cfg.get("server"),
+                    "database": cfg.get("database"),
+                    "driver": cfg.get("driver"),
+                    "encrypt": cfg.get("encrypt"),
+                    "trust_server_certificate": cfg.get("trust_server_certificate"),
+                },
+                file=sys.stderr,
+            )
+            return cfg
     except Exception as e:
         print(f"[DB] Could not load {CONFIG_PATH}: {e}", file=sys.stderr)
         return {}
 
 
-CFG = _load_cfg()
+def get_cfg() -> dict:
+    """Always load fresh config (so secrets / ngrok port changes are picked up)."""
+    return _load_cfg()
 
 
 # ---------- CONNECTION ----------
@@ -94,7 +120,9 @@ def _build_conn_str(cfg: dict) -> str:
 def connect_to_database():
     """Open a SQL Server connection using pyodbc and config (st.secrets or secrets.json)."""
     try:
-        conn_str = _build_conn_str(CFG)
+        cfg = get_cfg()
+        conn_str = _build_conn_str(cfg)
+        print("[DB] Connecting with connection string:", conn_str, file=sys.stderr)
         return pyodbc.connect(conn_str)
     except Exception as e:
         print(f"[DB] Connection error: {e}", file=sys.stderr)
@@ -114,7 +142,7 @@ def get_user(username):
             print("[LOGIN] DB connection failed!")
             return None
 
-        print("[LOGIN] Connected. Querying users...")
+        print("[LOGIN] Connected. Querying users for:", username, file=sys.stderr)
 
         cursor = conn.cursor()
         cursor.execute(
@@ -125,7 +153,7 @@ def get_user(username):
         row = cursor.fetchone()
         conn.close()
 
-        print("[LOGIN] Query returned:", row)
+        print("[LOGIN] Query returned:", row, file=sys.stderr)
 
         if row:
             return {
@@ -141,9 +169,8 @@ def get_user(username):
             return None
 
     except Exception as e:
-        print("[LOGIN] ERROR:", e)
+        print("[LOGIN] ERROR:", e, file=sys.stderr)
         return None
-
 
 
 def add_user(username: str, password: str, role: str, rights: dict | None = None) -> bool:
@@ -265,4 +292,3 @@ def verify_password(plain_password: str, stored_password: str) -> bool:
         except Exception:
             return False
     return plain_password == stored_password
-
