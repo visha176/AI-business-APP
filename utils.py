@@ -151,7 +151,7 @@ def get_user(username):
         cursor.execute(
             "SELECT id, username, password, role, "
             "can_access_internal_store_transfer, can_access_assortment, can_access_ip "
-            "FROM dbo.users WHERE username = ?", username.strip()
+            "FROM dbo.users WHERE username = %s", (username.strip(),)
         )
         row = cursor.fetchone()
         conn.close()
@@ -160,13 +160,13 @@ def get_user(username):
 
         if row:
             return {
-                "id": row.id,
-                "username": row.username,
-                "password": row.password,
-                "role": row.role,
-                "can_access_internal_store_transfer": bool(row.can_access_internal_store_transfer),
-                "can_access_assortment": bool(row.can_access_assortment),
-                "can_access_ip": bool(row.can_access_ip),
+                "id": row[0],
+                "username": row[1],
+                "password": row[2],
+                "role": row[3],
+                "can_access_internal_store_transfer": bool(row[4]),
+                "can_access_assortment": bool(row[5]),
+                "can_access_ip": bool(row[6]),
             }
         else:
             return None
@@ -295,5 +295,6 @@ def verify_password(plain_password: str, stored_password: str) -> bool:
         except Exception:
             return False
     return plain_password == stored_password
+
 
 
