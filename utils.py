@@ -3,7 +3,7 @@ import streamlit as st
 import os
 import json
 import sys
-import pyodbc  # pip install pyodbc
+import pymssql  # pip install pyodbc
 
 # Optional password hashing (works even if bcrypt isn't installed)
 try:
@@ -118,16 +118,19 @@ def _build_conn_str(cfg: dict) -> str:
 
 
 def connect_to_database():
-    """Open a SQL Server connection using pyodbc and config (st.secrets or secrets.json)."""
+    """Connect to SQL Server using pymssql."""
     try:
-        cfg = get_cfg()
-        conn_str = _build_conn_str(cfg)
-        print("[DB] Connecting with connection string:", conn_str, file=sys.stderr)
-        return pyodbc.connect(conn_str)
+        conn = pymssql.connect(
+            server=CFG.get("server"),
+            user=CFG.get("username"),
+            password=CFG.get("password"),
+            database=CFG.get("database"),
+            port=CFG.get("port", 1433)
+        )
+        return conn
     except Exception as e:
-        print(f"[DB] Connection error: {e}", file=sys.stderr)
+        print("[DB] pymssql Connection error:", e)
         return None
-
 
 # ---------- HELPERS ----------
 def _to_bit(v) -> int:
@@ -292,4 +295,5 @@ def verify_password(plain_password: str, stored_password: str) -> bool:
         except Exception:
             return False
     return plain_password == stored_password
+
 
