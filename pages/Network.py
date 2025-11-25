@@ -47,6 +47,37 @@ def load_data_from_db(
     except Exception as e:
         st.error(f"API Error while loading data: {e}")
         return pd.DataFrame()
+@app.post("/unique_values")
+def unique_values():
+    data = request.get_json() or {}
+    user_id = data.get("user_id")
+    column = data.get("column")
+
+    if not user_id or not column:
+        return jsonify({"success": False, "error": "user_id and column required"}), 400
+
+    # Safety: bracket the column name
+    sql = f"""
+        SELECT DISTINCT [{column}] AS val
+        FROM dbo.vw_StoreDesignSummary
+        WHERE user_id = %s
+    """
+
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute(sql, (user_id,))
+        rows = cur.fetchall()
+        conn.close()
+
+        values = [r[0] for r in rows if r[0] is not None]
+        values = sorted(map(str, values))
+
+        return jsonify({"success": True, "values": values})
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 
 def create_sample_file():
@@ -452,4 +483,5 @@ def show_Network():
 if __name__ == "__main__":
 
     show_Network()
+
 
