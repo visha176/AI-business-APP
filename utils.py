@@ -79,7 +79,7 @@ def _build_conn_str(cfg: dict) -> str:
     - Accepts either "server": "HOST,PORT" or "server": "HOST" + "port": 1433
     - Adds Encrypt/TrustServerCertificate for ODBC Driver 17/18
     """
-    driver = cfg.get("driver", "ODBC Driver 17 for SQL Server")
+    driver = cfg.get("driver", "ODBC Driver 18 for SQL Server")
     server = str(cfg.get("server", "")).strip()
     port = cfg.get("port")
 
@@ -292,3 +292,4 @@ def verify_password(plain_password: str, stored_password: str) -> bool:
         except Exception:
             return False
     return plain_password == stored_password
+
