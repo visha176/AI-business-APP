@@ -4,8 +4,38 @@ import numpy as np
 from datetime import datetime
 from io import BytesIO
 import json 
-# ⬇️ NEW: use your existing MSSQL connector
-from utils import connect_to_database
+import requests  # NEW
+
+API_URL = st.secrets.get("api_url")  # stored in streamlit secrets
+
+def load_data_from_db(
+    Volume_filter=None,
+    product_type_filter=None,
+    season_filter=None,
+    Years_filter=None
+):
+    if 'user_id' not in st.session_state:
+        st.error("User ID not found. Please log in.")
+        return pd.DataFrame()
+
+    try:
+        response = requests.post(
+            f"{API_URL}/store_data",
+            json={
+                "user_id": st.session_state["user_id"],
+                "Volume": Volume_filter,
+                "product_type": product_type_filter,
+                "Season": season_filter,
+                "Years": Years_filter
+            },
+            timeout=30
+        )
+        result = response.json()
+        return pd.DataFrame(result["data"]) if result.get("success") else pd.DataFrame()
+
+    except Exception as e:
+        st.error(f"API Error: {e}")
+        return pd.DataFrame()
 
 
     
@@ -85,27 +115,7 @@ def load_data_from_db(
     where_sql = " AND ".join(where)
     query = f"SELECT * FROM [dbo].[vw_StoreDesignSummary] WHERE {where_sql}"
 
-    conn = connect_to_database()
-    if not conn:
-        st.error("Failed to connect to SQL Server.")
-        return pd.DataFrame()
-
-    try:
-        df = pd.read_sql(query, conn, params=params)
-        return df.copy()
-    except Exception as e:
-        st.error(f"Error fetching data: {e}")
-        return pd.DataFrame()
-    finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
-
-
-
-
-
+   
 def adjust_date(df, threshold_date):
     if 'first_rcv_date' in df.columns:
         df['first_rcv_date'] = pd.to_datetime(df['first_rcv_date'], errors='coerce')
@@ -291,40 +301,23 @@ def to_excel(df):
     return processed_data
 # Function to get unique values for filters
 def get_unique_values(column_name: str):
-    """
-    Return distinct values for a column from dbo.Product_Data filtered by user_id.
-    Uses SQL Server via connect_to_database().
-    """
     if 'user_id' not in st.session_state:
-        st.error("User ID not found. Please log in to access data.")
-        return ["All"]
-
-    user_id = st.session_state['user_id']
-
-    # Wrap column with [] to handle reserved words/spaces safely
-    query = f"SELECT DISTINCT [{column_name}] AS val FROM [dbo].[vw_StoreDesignSummary] WHERE user_id = ?"
-# or, if needed:
-# query = f"SELECT DISTINCT [{column_name}] AS val FROM [AI_Planning Tool].[dbo].[vw_StoreDesignSummary] WHERE user_id = ?"
-
-
-    conn = connect_to_database()
-    if not conn:
-        st.error("Failed to connect to SQL Server.")
+        st.error("User ID not found.")
         return ["All"]
 
     try:
-        df = pd.read_sql(query, conn, params=[user_id])
-        vals = df["val"].dropna().astype(str).unique().tolist()
-        vals.sort()
-        return ["All"] + vals
+        response = requests.post(
+            f"{API_URL}/unique_values",
+            json={"user_id": st.session_state["user_id"], "column": column_name},
+            timeout=30
+        )
+        result = response.json()
+        values = result.get("values", [])
+        return ["All"] + values
+
     except Exception as e:
-        st.error(f"Error loading unique values for {column_name}: {e}")
+        st.error(f"Error loading values: {e}")
         return ["All"]
-    finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
 
 
 def show_Network():      
@@ -500,4 +493,5 @@ def show_Network():
         )
 
 if __name__ == "__main__":
+
     show_Network()
