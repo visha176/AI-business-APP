@@ -3,10 +3,11 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from io import BytesIO
-import json 
-import requests  # NEW
+import requests  # for calling Flask API
 
-API_URL = st.secrets.get("api_url")  # stored in streamlit secrets
+# 🔗 Flask+ngrok base URL from Streamlit secrets
+API_URL = st.secrets.get("api_url")  # e.g. "https://abcd-xyz.ngrok-free.app"
+
 
 def load_data_from_db(
     Volume_filter=None,
@@ -14,106 +15,62 @@ def load_data_from_db(
     season_filter=None,
     Years_filter=None
 ):
-    if 'user_id' not in st.session_state:
+    """
+    Load data from the Flask API instead of direct SQL.
+    """
+    if "user_id" not in st.session_state:
         st.error("User ID not found. Please log in.")
         return pd.DataFrame()
 
     try:
-        response = requests.post(
+        resp = requests.post(
             f"{API_URL}/store_data",
             json={
                 "user_id": st.session_state["user_id"],
                 "Volume": Volume_filter,
                 "product_type": product_type_filter,
                 "Season": season_filter,
-                "Years": Years_filter
+                "Years": Years_filter,
             },
-            timeout=30
+            timeout=30,
         )
-        result = response.json()
-        return pd.DataFrame(result["data"]) if result.get("success") else pd.DataFrame()
+        resp.raise_for_status()
+        result = resp.json()
+
+        if not result.get("success"):
+            st.error(f"API error: {result.get('error', 'Unknown error')}")
+            return pd.DataFrame()
+
+        data = result.get("data", [])
+        return pd.DataFrame(data)
 
     except Exception as e:
-        st.error(f"API Error: {e}")
+        st.error(f"API Error while loading data: {e}")
         return pd.DataFrame()
 
 
-    
 def create_sample_file():
-    # Creating a sample DataFrame with the required headers
+    """Return an in-memory Excel sample file."""
     sample_data = {
-        'DESIGN': ['Design1', 'Design2'],
-        'STORE_NAME': ['Store1', 'Store2'],
-        'first_rcv_date': [datetime(2023, 1, 1), datetime(2023, 2, 1)],
-        'UPC_Barcode_SKU': [1223456, 345678],
-        'Shop_Rcv_Qty': [100, 150],
-        'Disp_Qty': [10, 20],
-        'OH_Qty': [90, 130],
-        'Sold_Qty': [50, 80],
-        'Color': ['Red', 'Blue'],
-        'Size': ['Small', 'Medium'],
-        'Volume': ['Casual', 'Fancy'],
-        'product_type': ['Lawn', 'Chiffon']
+        "DESIGN": ["Design1", "Design2"],
+        "STORE_NAME": ["Store1", "Store2"],
+        "first_rcv_date": [datetime(2023, 1, 1), datetime(2023, 2, 1)],
+        "UPC_Barcode_SKU": [1223456, 345678],
+        "Shop_Rcv_Qty": [100, 150],
+        "Disp_Qty": [10, 20],
+        "OH_Qty": [90, 130],
+        "Sold_Qty": [50, 80],
+        "Color": ["Red", "Blue"],
+        "Size": ["Small", "Medium"],
+        "Volume": ["Casual", "Fancy"],
+        "product_type": ["Lawn", "Chiffon"],
     }
-    sample_df = pd.DataFrame(sample_data)
+    df = pd.DataFrame(sample_data)
 
-    # Converting DataFrame to an Excel file in memory
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        sample_df.to_excel(writer, index=False, sheet_name='Sample Data')
-    processed_data = output.getvalue()
-    return processed_data
-def load_db_credentials():
-    with open('secrets.json', 'r') as file:
-        credentials = json.load(file)
-    return credentials
-
-def load_data_from_db(
-    Volume_filter=None,
-    product_type_filter=None,
-    season_filter=None,
-    Years_filter=None
-):
-    """
-    Load rows from dbo.vw_StoreDesignSummary filtered by the current user's user_id
-    and the optional filters. Uses SQL Server via pyodbc (connect_to_database()).
-    """
-    if 'user_id' not in st.session_state:
-        st.error("User ID not found. Please log in to access data.")
-        return pd.DataFrame()
-
-    user_id = st.session_state['user_id']
-
-    # Build the WHERE clause dynamically with parameters (safe/parameterized)
-    where = ["user_id = ?"]
-    params = [user_id]
-
-    # Volume (multi-select → IN clause)
-    if Volume_filter:
-        placeholders = ",".join(["?"] * len(Volume_filter))
-        where.append(f"[Volume] IN ({placeholders})")
-        params.extend(Volume_filter)
-
-    # product_type (multi-select → IN clause)
-    if product_type_filter:
-        placeholders = ",".join(["?"] * len(product_type_filter))
-        where.append(f"[product_type] IN ({placeholders})")
-        params.extend(product_type_filter)
-
-    # Season (multi-select → IN clause)
-    if season_filter:
-        placeholders = ",".join(["?"] * len(season_filter))
-        where.append(f"[Season] IN ({placeholders})")
-        params.extend(season_filter)
-
-    # Years (multi-select → IN clause)
-    if Years_filter:
-        placeholders = ",".join(["?"] * len(Years_filter))
-        where.append(f"[Years] IN ({placeholders})")
-        params.extend(Years_filter)
-
-    where_sql = " AND ".join(where)
-    query = f"SELECT * FROM [dbo].[vw_StoreDesignSummary] WHERE {where_sql}"
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Sample Data")
+    return output.getvalue()
 
    
 def adjust_date(df, threshold_date):
@@ -495,3 +452,4 @@ def show_Network():
 if __name__ == "__main__":
 
     show_Network()
+
