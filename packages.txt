@@ -1,3 +1,6 @@
+# Required for pyodbc
 unixodbc
 unixodbc-dev
-msodbcsql18
+
+# Install ODBC Driver 18 with automatic EULA acceptance
+msodbcsql18 ACCEPT_EULA=Y
