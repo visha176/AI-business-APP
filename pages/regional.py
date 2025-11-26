@@ -386,6 +386,11 @@ def show_regional():
             margin: 0px;
             line-height: 1.2;
         }
+        .st-emotion-cache-3qzj0x p {
+    word-break: break-word;
+    margin: 0px;
+    color: white;
+}
         </style>
     """, unsafe_allow_html=True)
 
@@ -404,7 +409,7 @@ def show_regional():
         # 🔹 Filters row
     filter_defs = [
         ("Volume", "Volume"),
-        ("product_type", "product_type"),
+        ("product_type", "Product"),
         ("Seasons", "Seasons"),
         ("Zone", "Zone"),
         ("Years", "Years"),  # 👈 NEW: filter by Years column
@@ -475,6 +480,7 @@ def show_regional():
 
 if __name__ == "__main__":
     show_regional()
+
 
 
 
