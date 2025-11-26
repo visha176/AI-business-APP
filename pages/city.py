@@ -374,23 +374,22 @@ def show_city():
     )
 
     # 🔹 Filters -----------------
+       # 🔹 Filters row
     filter_defs = [
         ("Volume", "Volume"),
         ("product_type", "product_type"),
         ("Seasons", "Seasons"),
         ("City", "City"),
+        ("Years", "Years"),  # 👈 NEW: filter by Years column
     ]
 
     filters = {}
-    cols = st.columns(len(filter_defs) + 2)
+    cols = st.columns(len(filter_defs))
 
     for i, (label, db_col) in enumerate(filter_defs):
         options = get_unique_values(db_col)
-        selected = cols[i].selectbox(f"Select {label}", options=options, index=0)
-        filters[label] = None if selected == "All" else selected
-
-    start_date = cols[len(filter_defs)].date_input("From Date")
-    end_date = cols[len(filter_defs) + 1].date_input("To Date")
+        selected_option = cols[i].selectbox(f"Select {label}", options=options, index=0)
+        filters[label] = None if selected_option == "All" else selected_option
 
     threshold_date = st.date_input("Season Launch Date", min_value=datetime(2020, 1, 1), value=datetime.now())
     sell_through_threshold = st.number_input("Enter Sell-Through Threshold (%)", min_value=0, max_value=100, value=60)
@@ -404,8 +403,7 @@ def show_city():
                 product_type_filter=filters["product_type"],
                 season_filter=filters["Seasons"],
                 city_filter=filters["City"],
-                start_date=start_date,
-                end_date=end_date
+                Years_filter=filters["Years"],
             )
 
             if data.empty:
@@ -447,4 +445,5 @@ def show_city():
 
 if __name__ == "__main__":
     show_city()
+
 
