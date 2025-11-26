@@ -3,8 +3,105 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from io import BytesIO
+import requests  # for calling Flask API
 
-from utils import connect_to_database  # 🔌 SQL connection
+# 🔗 Flask+ngrok base URL from Streamlit secrets
+API_URL = st.secrets.get("api_url")  # e.g. "https://abcd-xyz.ngrok-free.app"
+
+
+def load_data_from_db(
+    Volume_filter=None,
+    product_type_filter=None,
+    season_filter=None,
+    Years_filter=None
+):
+    if "user_id" not in st.session_state:
+        st.error("User ID not found. Please log in.")
+        return pd.DataFrame()
+
+    try:
+        resp = requests.post(
+            f"{API_URL}/store_data",
+            json={
+                "user_id": st.session_state["user_id"],
+                "Volume": Volume_filter,
+                "product_type": product_type_filter,
+                "Season": season_filter,
+                "Years": Years_filter,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        result = resp.json()
+
+        if not result.get("success"):
+            st.error(f"API error: {result.get('error', 'Unknown error')}")
+            return pd.DataFrame()
+
+        data = result.get("data", [])
+        df = pd.DataFrame(data)
+
+        # 🔹 Normalize column names
+        df.columns = df.columns.str.strip()
+        df.columns = df.columns.str.replace(" ", "_")
+
+        # 🔹 Standardize 'first_rcv_date' naming if DB returns different spelling/case
+        for col in df.columns:
+            if col.lower() == "first_rcv_date":
+                if col != "first_rcv_date":
+                    df = df.rename(columns={col: "first_rcv_date"})
+                break
+
+        # 🔹 Convert key columns to correct numeric types
+        numeric_cols = ["Sold_Qty", "Shop_Rcv_Qty", "Disp_Qty", "OH_Qty"]
+        for c in numeric_cols:
+            if c in df.columns:
+                df[c] = pd.to_numeric(df[c], errors="coerce")
+
+        # 🔹 Convert date column to datetime
+        if "first_rcv_date" in df.columns:
+            df["first_rcv_date"] = pd.to_datetime(df["first_rcv_date"], errors="coerce")
+
+        return df
+
+    except Exception as e:
+        st.error(f"API Error while loading data: {e}")
+        return pd.DataFrame()
+
+
+
+def get_unique_values(column_name: str):
+    """
+    Call Flask /unique_values endpoint to get filter values.
+    """
+    if "user_id" not in st.session_state:
+        st.error("User ID not found.")
+        return ["All"]
+
+    try:
+        resp = requests.post(
+            f"{API_URL}/unique_values",
+            json={
+                "user_id": st.session_state["user_id"],
+                "column": column_name,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        result = resp.json()
+
+        if not result.get("success"):
+            st.error(f"API error (unique_values): {result.get('error', 'Unknown error')}")
+            return ["All"]
+
+        values = result.get("values", [])
+        return ["All"] + values
+
+    except Exception as e:
+        st.error(f"API Error while loading values for {column_name}: {e}")
+        return ["All"]
+
+
 
 
 # ---------- SAMPLE FILE ----------
@@ -33,117 +130,6 @@ def create_sample_file():
         sample_df.to_excel(writer, index=False, sheet_name='Sample Data')
     processed_data = output.getvalue()
     return processed_data
-
-
-# ---------- NEW: GET UNIQUE FILTER VALUES FROM SQL ----------
-def get_unique_values(column_name: str):
-    """
-    Return distinct values for a column from dbo.Product_Data filtered by user_id.
-    """
-    if 'user_id' not in st.session_state:
-        st.error("User ID not found. Please log in to access data.")
-        return ["All"]
-
-    user_id = st.session_state['user_id']
-
-    query = f"SELECT DISTINCT [{column_name}] AS val FROM [dbo].[vw_StoreDesignSummary] WHERE user_id = ?"
-
-    conn = connect_to_database()
-    if not conn:
-        st.error("Failed to connect to SQL Server.")
-        return ["All"]
-
-    try:
-        df = pd.read_sql(query, conn, params=[user_id])
-        vals = df["val"].dropna().astype(str).unique().tolist()
-        vals.sort()
-        return ["All"] + vals
-    except Exception as e:
-        st.error(f"Error loading unique values for {column_name}: {e}")
-        return ["All"]
-    finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
-
-
-# ---------- NEW: LOAD DATA FROM SQL INSTEAD OF EXCEL ----------
-def load_data_from_db(
-    Volume_filter=None,
-    product_type_filter=None,
-    season_filter=None,
-    zone_filter=None,
-    start_date=None,
-    end_date=None
-):
-    """
-    Load rows from dbo.Product_Data filtered by user_id and filters,
-    then rename columns to match existing regional logic.
-    """
-    if 'user_id' not in st.session_state:
-        st.error("User ID not found. Please log in to access data.")
-        return pd.DataFrame()
-
-    user_id = st.session_state['user_id']
-
-    where = ["user_id = ?"]
-    params = [user_id]
-
-    if Volume_filter:
-        where.append("[Volume] = ?")
-        params.append(Volume_filter)
-
-    if product_type_filter:
-        where.append("[product_type] = ?")
-        params.append(product_type_filter)
-
-    if season_filter:
-        where.append("[Seasons] = ?")
-        params.append(season_filter)
-
-    if zone_filter:
-        where.append("[Zone] = ?")
-        params.append(zone_filter)
-
-    if start_date and end_date:
-        where.append("[first_rcv_date] BETWEEN ? AND ?")
-        params.extend([start_date, end_date])
-
-    where_sql = " AND ".join(where)
-    query = f"SELECT * FROM [dbo].[vw_StoreDesignSummary] WHERE {where_sql}"
-
-
-    conn = connect_to_database()
-    if not conn:
-        st.error("Failed to connect to SQL Server.")
-        return pd.DataFrame()
-
-    try:
-        df = pd.read_sql(query, conn, params=params)
-
-        # 🔁 Rename DB columns to match your original regional logic
-        rename_map = {
-            'first_rcv_date': '1st Rcv Date',
-            'UPC_Barcode_SKU': 'UPC/Barcode/SKU',
-            'Shop_Rcv_Qty': 'Shop Rcv Qty',
-            'Disp_Qty': 'Disp. Qty',
-            'OH_Qty': 'O.H Qty',
-            'Sold_Qty': 'Sold Qty',
-            'product_type': 'product_type'
-        }
-        df = df.rename(columns=rename_map)
-
-        return df.copy()
-    except Exception as e:
-        st.error(f"Error fetching data: {e}")
-        return pd.DataFrame()
-    finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
-
 
 # ---------- YOUR ORIGINAL PROCESSING LOGIC (UNCHANGED) ----------
 def adjust_date(df, threshold_date):
@@ -486,3 +472,4 @@ def show_regional():
 
 if __name__ == "__main__":
     show_regional()
+
