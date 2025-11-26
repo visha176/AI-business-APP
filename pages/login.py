@@ -53,6 +53,28 @@ def show_login():
                 font-family:"Source Sans Pro",sans-serif;
                 color:white;
             }
+            .st-emotion-cache-5qfegl {
+    display: inline-flex;
+    -webkit-box-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    justify-content: center;
+    font-weight: 400;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    min-height: 2.5rem;
+    margin: 0px;
+    line-height: 1.6;
+    text-transform: none;
+    font-size: inherit;
+    font-family: inherit;
+    color: inherit;
+    width: 100%;
+    cursor: pointer;
+    user-select: none;
+    background-color: rgb(0 0 0);
+    /* border: 1px solid rgba(49, 51, 63, 0.2); */
+}
             h1{font-weight:700;}
             h2{font-weight:600;}
         </style>
@@ -80,3 +102,4 @@ if not st.session_state.get("logged_in"):
     show_login()
 else:
     st.success(f"Logged in as {st.session_state['username']}")
+
