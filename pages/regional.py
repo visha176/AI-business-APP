@@ -340,9 +340,10 @@ def show_regional():
     )
 
     if page_choice == "City":
-        st.switch_page("pages/city.py")
+        st.switch_page("City")
     elif page_choice == "Network":
-        st.switch_page("pages/network.py")
+        st.switch_page("Network")
+
 
     st.session_state["current_page"] = "Regional"
 
@@ -473,5 +474,6 @@ def show_regional():
 
 if __name__ == "__main__":
     show_regional()
+
 
 
