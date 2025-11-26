@@ -42,15 +42,20 @@ def _post(endpoint: str, payload: dict) -> dict:
 
 
 # ---------- USERS API (wrapping your Flask endpoints) ----------
-def get_user(username: str):
-    """Fetch user from Flask API."""
+def get_user(username: str, password: str):
+    """Login user via Flask API."""
     username = (username or "").strip()
-    if not username:
+    password = (password or "").strip()
+
+    if not username or not password:
         return None
 
-    data = _post("/get_user", {"username": username})
+    payload = {"username": username, "password": password}
+    data = _post("/get_user", payload)
+
     if data.get("success") and data.get("user"):
         return data["user"]
+
     return None
 
 
@@ -99,3 +104,4 @@ def verify_password(plain_password: str, stored_password: str) -> bool:
     if stored_password is None:
         return False
     return plain_password == stored_password
+
