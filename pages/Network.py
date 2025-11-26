@@ -429,7 +429,7 @@ def show_Network():
     )
     
     # Define the columns we want to create filters for
-    filter_columns = ["Volume", "Product", "Season"]
+    filter_columns = ["Volume", "product_type", "Season"]
     filters = {}
     cols = st.columns(len(filter_columns) + 1)  # +2 for the date inputs
 # MULTISELECT FILTERS
@@ -512,6 +512,7 @@ def show_Network():
 if __name__ == "__main__":
 
     show_Network()
+
 
 
 
