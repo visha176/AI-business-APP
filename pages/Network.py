@@ -15,9 +15,6 @@ def load_data_from_db(
     season_filter=None,
     Years_filter=None
 ):
-    """
-    Load data from the Flask API instead of direct SQL.
-    """
     if "user_id" not in st.session_state:
         st.error("User ID not found. Please log in.")
         return pd.DataFrame()
@@ -42,11 +39,25 @@ def load_data_from_db(
             return pd.DataFrame()
 
         data = result.get("data", [])
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
+
+        # 🔹 NORMALIZE COLUMN NAMES
+        df.columns = df.columns.str.strip()              # remove spaces
+        df.columns = df.columns.str.replace(" ", "_")    # spaces → underscore
+
+        # if view used another case like First_Rcv_Date
+        for col in df.columns:
+            if col.lower() == "first_rcv_date":
+                if col != "first_rcv_date":
+                    df = df.rename(columns={col: "first_rcv_date"})
+                break
+
+        return df
 
     except Exception as e:
         st.error(f"API Error while loading data: {e}")
         return pd.DataFrame()
+
 
 
 def get_unique_values(column_name: str):
@@ -486,6 +497,7 @@ def show_Network():
 if __name__ == "__main__":
 
     show_Network()
+
 
 
 
