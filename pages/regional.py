@@ -331,7 +331,6 @@ def to_excel(df):
 # ---------- UI ----------
 def show_regional():
 
-
     # ================== PAGE DROPDOWN NAVIGATION ==================
     page_choice = st.selectbox(
         "🔀 Go to Page:",
@@ -339,13 +338,15 @@ def show_regional():
         key="page_selector_regional"
     )
 
+    # Use file paths relative to main script
     if page_choice == "City":
-        st.switch_page("City")
+        st.switch_page("pages/city.py")
     elif page_choice == "Network":
-        st.switch_page("Network")
-
+        st.switch_page("pages/network.py")
+    # If "Regional" is selected, stay on this page
 
     st.session_state["current_page"] = "Regional"
+
 
     # ================== PAGE STYLE ==================
     st.markdown("""
@@ -474,6 +475,7 @@ def show_regional():
 
 if __name__ == "__main__":
     show_regional()
+
 
 
 
