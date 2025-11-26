@@ -19,22 +19,23 @@ def login_page():
         return
 
     if st.button("Login"):
-        user = get_user(username)
-        if user and verify_password(password, user["password"]):
-            st.session_state["logged_in"] = True
-            st.session_state["username"] = user["username"]
-            st.session_state["user_id"] = user.get("id")
-            st.session_state["role"] = user.get("role")
-            st.session_state["rights"] = {
-                "internal_store_transfer": user.get("can_access_internal_store_transfer", False),
-                "assortment": user.get("can_access_assortment", False),
-                "ip": user.get("can_access_ip", False),
-            }
-            st.success("✅ Login successful! Redirecting...")
-            time.sleep(0.8)
-            _safe_rerun()
-        else:
-            st.error("❌ Invalid username or password.")
+    user = get_user(username, password)  # <-- Pass both values
+    if user:
+        st.session_state["logged_in"] = True
+        st.session_state["username"] = user["username"]
+        st.session_state["user_id"] = user.get("id")
+        st.session_state["role"] = user.get("role")
+        st.session_state["rights"] = {
+            "internal_store_transfer": user.get("can_access_internal_store_transfer", False),
+            "assortment": user.get("can_access_assortment", False),
+            "ip": user.get("can_access_ip", False),
+        }
+        st.success("✅ Login successful! Redirecting...")
+        time.sleep(0.8)
+        _safe_rerun()
+    else:
+        st.error("❌ Invalid username or password.")
+
 
 def show_login():
     st.markdown("""
@@ -72,3 +73,4 @@ if not st.session_state.get("logged_in"):
     show_login()
 else:
     st.success(f"✅ You are logged in as {st.session_state['username']}")
+
