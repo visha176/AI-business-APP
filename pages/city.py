@@ -27,6 +27,7 @@ def load_data_from_db(
                 "Volume": Volume_filter,
                 "product_type": product_type_filter,
                 "Season": season_filter,
+                "City": city_filter,
                 "Years": Years_filter,
             },
             timeout=30,
@@ -445,5 +446,6 @@ def show_city():
 
 if __name__ == "__main__":
     show_city()
+
 
 
