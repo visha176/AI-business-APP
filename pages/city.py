@@ -360,6 +360,11 @@ def show_city():
                 color: rgb(244 245 253);
                 padding: 1.25rem 0px 1rem;
             }
+            .st-emotion-cache-3qzj0x p {
+    word-break: break-word;
+    margin: 0px;
+    color: white;
+}
         </style>
     """, unsafe_allow_html=True)
 
@@ -378,7 +383,7 @@ def show_city():
        # 🔹 Filters row
     filter_defs = [
         ("Volume", "Volume"),
-        ("product_type", "product_type"),
+        ("product_type", "Product"),
         ("Seasons", "Seasons"),
         ("City", "City"),
         ("Years", "Years"),  # 👈 NEW: filter by Years column
@@ -446,6 +451,7 @@ def show_city():
 
 if __name__ == "__main__":
     show_city()
+
 
 
 
