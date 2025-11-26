@@ -399,6 +399,11 @@ def show_Network():
     margin: 0px;
     line-height: 1.2;
 }
+.st-emotion-cache-3qzj0x p {
+    word-break: break-word;
+    margin: 0px;
+    color: white;
+}
                 .st-emotion-cache-1whx7iy p {
     /* word-break: break-word; */
     margin-bottom: 0px;
@@ -424,7 +429,7 @@ def show_Network():
     )
     
     # Define the columns we want to create filters for
-    filter_columns = ["Volume", "product_type", "Season"]
+    filter_columns = ["Volume", "Product", "Season"]
     filters = {}
     cols = st.columns(len(filter_columns) + 1)  # +2 for the date inputs
 # MULTISELECT FILTERS
@@ -507,6 +512,7 @@ def show_Network():
 if __name__ == "__main__":
 
     show_Network()
+
 
 
 
