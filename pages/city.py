@@ -383,7 +383,7 @@ def show_city():
        # 🔹 Filters row
     filter_defs = [
         ("Volume", "Volume"),
-        ("product_type", "Product"),
+        ("product_type", "product_type"),
         ("Seasons", "Seasons"),
         ("City", "City"),
         ("Years", "Years"),  # 👈 NEW: filter by Years column
@@ -451,6 +451,7 @@ def show_city():
 
 if __name__ == "__main__":
     show_city()
+
 
 
 
