@@ -409,7 +409,7 @@ def show_regional():
         # 🔹 Filters row
     filter_defs = [
         ("Volume", "Volume"),
-        ("product_type", "Product"),
+        ("product_type", "product_type"),
         ("Seasons", "Seasons"),
         ("Zone", "Zone"),
         ("Years", "Years"),  # 👈 NEW: filter by Years column
@@ -480,6 +480,7 @@ def show_regional():
 
 if __name__ == "__main__":
     show_regional()
+
 
 
 
