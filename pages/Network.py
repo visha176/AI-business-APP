@@ -41,16 +41,26 @@ def load_data_from_db(
         data = result.get("data", [])
         df = pd.DataFrame(data)
 
-        # 🔹 NORMALIZE COLUMN NAMES
-        df.columns = df.columns.str.strip()              # remove spaces
-        df.columns = df.columns.str.replace(" ", "_")    # spaces → underscore
+        # 🔹 Normalize column names
+        df.columns = df.columns.str.strip()
+        df.columns = df.columns.str.replace(" ", "_")
 
-        # if view used another case like First_Rcv_Date
+        # 🔹 Standardize 'first_rcv_date' naming if DB returns different spelling/case
         for col in df.columns:
             if col.lower() == "first_rcv_date":
                 if col != "first_rcv_date":
                     df = df.rename(columns={col: "first_rcv_date"})
                 break
+
+        # 🔹 Convert key columns to correct numeric types
+        numeric_cols = ["Sold_Qty", "Shop_Rcv_Qty", "Disp_Qty", "OH_Qty"]
+        for c in numeric_cols:
+            if c in df.columns:
+                df[c] = pd.to_numeric(df[c], errors="coerce")
+
+        # 🔹 Convert date column to datetime
+        if "first_rcv_date" in df.columns:
+            df["first_rcv_date"] = pd.to_datetime(df["first_rcv_date"], errors="coerce")
 
         return df
 
@@ -497,6 +507,7 @@ def show_Network():
 if __name__ == "__main__":
 
     show_Network()
+
 
 
 
