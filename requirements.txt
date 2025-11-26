@@ -2,3 +2,6 @@ streamlit
 pandas
 numpy
 requests
+pandas
+openpyxl
+xlsxwriter
