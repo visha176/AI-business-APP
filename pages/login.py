@@ -32,10 +32,11 @@ def login_page():
 
             # ✔ Ensure rights exist so pages stay visible
             st.session_state["rights"] = {
-                "internal_store_transfer": bool(user.get("can_access_internal_store_transfer", True)),
-                "assortment": bool(user.get("can_access_assortment", True)),
-                "ip": bool(user.get("can_access_ip", True)),
-            }
+            "internal_store_transfer": True,   # FORCE ENABLE ACCESS TEMPORARILY
+            "assortment": True,
+            "ip": True,
+        }
+
 
             # Debug temporary check - remove later
             st.write("DEBUG RIGHTS:", st.session_state["rights"])
@@ -106,3 +107,4 @@ if not st.session_state.get("logged_in"):
     show_login()
 else:
     st.success(f"Logged in as {st.session_state['username']}")
+
