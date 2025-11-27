@@ -121,6 +121,11 @@ if selected_page != st.session_state["selected_page"]:
 
 PAGES = get_private_pages() if st.session_state["logged_in"] else PUBLIC_PAGES
 
+# 🟡 ADD DEBUG LOG HERE
+import os
+st.write("DEBUG SESSION STATE:", dict(st.session_state))
+st.write("PROCESS ID:", os.getpid())
+
 # Draw navbar
 fixed_navbar(list(PAGES.keys()))
 
@@ -131,6 +136,8 @@ elif selected_page in PAGES:
     PAGES[selected_page]()
 else:
     PAGES["home"]()
+
+
 
 
 
