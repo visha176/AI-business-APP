@@ -24,10 +24,12 @@ for key, value in defaults.items():
 
 # ---------- LOGOUT ----------
 def handle_logout():
-    st.session_state.clear()
-    st.session_state["logged_in"] = False
+    for key in ["logged_in", "username", "role", "rights", "user_id"]:
+        if key in st.session_state:
+            del st.session_state[key]
     st.session_state["selected_page"] = "home"
     st.rerun()
+
 
 # ---------- PAGE MAPS ----------
 def get_private_pages():
@@ -111,7 +113,7 @@ def fixed_navbar(page_names):
     )
 
 # ---------- ROUTER ----------
-selected_page = unquote(st.query_params.get("page", st.session_state["selected_page"]))
+selected_page = unquote(st.query_params.get("page")) or st.session_state.get("selected_page", "home")
 
 if selected_page != st.session_state["selected_page"]:
     st.session_state["selected_page"] = selected_page
@@ -128,3 +130,4 @@ elif selected_page in PAGES:
     PAGES[selected_page]()
 else:
     PAGES["home"]()
+
