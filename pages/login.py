@@ -6,7 +6,7 @@ def _safe_rerun():
     if hasattr(st, "rerun"):
         st.rerun()
     else:
-        st.experimental_rerun()  # for older versions
+        st.experimental_rerun()
 
 
 def login_page():
@@ -15,28 +15,38 @@ def login_page():
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    if st.session_state.get("logged_in"):
+    # If already logged in, show status and exit
+    if st.session_state.get("logged_in", False):
         st.success(f"✅ Already logged in as {st.session_state['username']}")
         return
 
     if st.button("Login"):
-        # call API with both username + password
         user = get_user(username, password)
 
         if user:
+            # Store login session state
             st.session_state["logged_in"] = True
-            st.session_state["username"] = user["username"]
+            st.session_state["username"] = user.get("username", "")
             st.session_state["user_id"] = user.get("id")
-            st.session_state["role"] = user.get("role")
+            st.session_state["role"] = user.get("role", "")
+
+            # ✔ Ensure rights exist so pages stay visible
             st.session_state["rights"] = {
-                "internal_store_transfer": user.get("can_access_internal_store_transfer", False),
-                "assortment": user.get("can_access_assortment", False),
-                "ip": user.get("can_access_ip", False),
+                "internal_store_transfer": bool(user.get("can_access_internal_store_transfer", True)),
+                "assortment": bool(user.get("can_access_assortment", True)),
+                "ip": bool(user.get("can_access_ip", True)),
             }
+
+            # Debug temporary check - remove later
+            st.write("DEBUG RIGHTS:", st.session_state["rights"])
+
+            # 🎯 Redirect to Internal Store Transfer
+            st.session_state["selected_page"] = "Internal Store Transfer📦"
 
             st.success("🎉 Login successful! Redirecting...")
             time.sleep(0.8)
             _safe_rerun()
+
         else:
             st.error("❌ Invalid username or password")
 
@@ -54,27 +64,24 @@ def show_login():
                 color:white;
             }
             .st-emotion-cache-5qfegl {
-    display: inline-flex;
-    -webkit-box-align: center;
-    align-items: center;
-    -webkit-box-pack: center;
-    justify-content: center;
-    font-weight: 400;
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.5rem;
-    min-height: 2.5rem;
-    margin: 0px;
-    line-height: 1.6;
-    text-transform: none;
-    font-size: inherit;
-    font-family: inherit;
-    color: inherit;
-    width: 100%;
-    cursor: pointer;
-    user-select: none;
-    background-color: rgb(0 0 0);
-    /* border: 1px solid rgba(49, 51, 63, 0.2); */
-}
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 400;
+                padding: 0.25rem 0.75rem;
+                border-radius: 0.5rem;
+                min-height: 2.5rem;
+                margin: 0px;
+                line-height: 1.6;
+                text-transform: none;
+                font-size: inherit;
+                font-family: inherit;
+                color: inherit;
+                width: 100%;
+                cursor: pointer;
+                user-select: none;
+                background-color: rgb(0 0 0);
+            }
             h1{font-weight:700;}
             h2{font-weight:600;}
         </style>
@@ -88,18 +95,14 @@ def show_login():
         else:
             st.success(f"Logged in as: {st.session_state['username']}")
 
-    with col2:
-        st.write("")
-
     with col3:
         st.header("Welcome")
         st.write("Welcome to the Internal Store Transfer and Assortment Management App!")
         st.write("Upload your Excel file to manage assortments and streamline internal store transfers.")
 
 
-# Entry point
+# ⏺ ENTRY POINT
 if not st.session_state.get("logged_in"):
     show_login()
 else:
     st.success(f"Logged in as {st.session_state['username']}")
-
