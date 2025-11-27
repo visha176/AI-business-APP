@@ -34,7 +34,7 @@ def get_private_pages():
         "Home 🏠": home.show_home,
         "Contact 📞": contact.show_contact,
     }
-    if st.session_state.rights.get("internal_store_transfer", False):
+    if st.session_state.rights.get("internal_store_transfer", True):
         pages["Internal Store Transfer📦"] = network.show_Network
     if st.session_state.role == "admin":
         pages["Admin Panel 🛠️"] = admin.show_admin_panel
@@ -108,3 +108,4 @@ elif selected_page in PAGES:
     PAGES[selected_page]()
 else:
     PAGES["Home 🏠"]()
+
