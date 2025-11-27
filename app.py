@@ -46,12 +46,13 @@ def handle_login():
 
 
 def handle_logout():
-    for k in list(st.session_state.keys()):
-        del st.session_state[k]
-
     st.session_state["logged_in"] = False
+    st.session_state["username"] = ""
+    st.session_state["role"] = ""
+    st.session_state["user_id"] = ""
     st.session_state["selected_page"] = "Home 🏠"
     st.rerun()
+
 
 
 # ---------- PAGE MAPS ----------
@@ -139,32 +140,30 @@ def fixed_navbar(page_names):
 
 
 # ---------- ROUTER ----------
-selected = unquote(
-    st.query_params.get("page", st.session_state.get("selected_page", "Home 🏠"))
-)
+clicked = st.query_params.get("page")
 
-if selected != st.session_state.get("selected_page"):
-    st.session_state["selected_page"] = selected
+# If user clicked a navbar link, update selected page
+if clicked:
+    st.session_state["selected_page"] = clicked
 
-# Load routes
-if st.session_state.get("logged_in", False):
-    PAGES = get_private_pages()
-else:
-    PAGES = PUBLIC_PAGES
+# Always read from session_state only (no fallback logic here)
+selected = st.session_state.get("selected_page", "Home 🏠")
+
+# Load available pages
+PAGES = get_private_pages() if st.session_state.get("logged_in", False) else PUBLIC_PAGES
 
 # Render navbar
 fixed_navbar(list(PAGES.keys()))
 
-# Route
+# Page handling
 if selected == "Logout 🚪":
     handle_logout()
 elif selected in PAGES:
     PAGES[selected]()
 else:
-    if st.session_state.get("logged_in", False):
-        home.show_home()
-    else:
-        login.show_login()
+    st.session_state["selected_page"] = "Home 🏠"
+    PAGES["Home 🏠"]()
+
 
 
 
