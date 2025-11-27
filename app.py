@@ -59,11 +59,10 @@ def get_private_pages():
     pages = {
         "Home 🏠": home.show_home,
         "Contact 📞": contact.show_contact,
+        "Internal Store Transfer📦": network.show_Network,   # Always available
     }
 
-    if st.session_state.rights.get("internal_store_transfer"):
-        pages["Internal Store Transfer📦"] = network.show_Network
-
+    # Admin page only for admin
     if st.session_state.role == "admin":
         pages["Admin Panel 🛠️"] = admin.show_admin_panel
 
@@ -166,5 +165,6 @@ else:
         home.show_home()
     else:
         login.show_login()
+
 
 
