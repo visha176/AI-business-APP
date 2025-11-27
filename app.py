@@ -113,7 +113,8 @@ def fixed_navbar(page_names):
     )
 
 # ---------- ROUTER ----------
-selected_page = unquote(st.query_params.get("page")) or st.session_state.get("selected_page", "home")
+raw_page = st.query_params.get("page")
+selected_page = unquote(raw_page) if raw_page else st.session_state.get("selected_page", "home")
 
 if selected_page != st.session_state["selected_page"]:
     st.session_state["selected_page"] = selected_page
@@ -130,4 +131,6 @@ elif selected_page in PAGES:
     PAGES[selected_page]()
 else:
     PAGES["home"]()
+
+
 
