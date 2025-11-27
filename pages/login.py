@@ -42,7 +42,7 @@ def login_page():
             st.write("DEBUG RIGHTS:", st.session_state["rights"])
 
             # 🎯 Redirect to Internal Store Transfer
-            st.session_state["selected_page"] = "Internal Store Transfer📦"
+            st.session_state["selected_page"] = "internal_store_transfer"
 
             st.success("🎉 Login successful! Redirecting...")
             time.sleep(0.8)
@@ -107,4 +107,5 @@ if not st.session_state.get("logged_in"):
     show_login()
 else:
     st.success(f"Logged in as {st.session_state['username']}")
+
 
