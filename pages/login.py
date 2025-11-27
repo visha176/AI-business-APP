@@ -31,6 +31,12 @@ def login_page():
             st.session_state["user_id"] = user.get("id")
             st.session_state["role"] = user.get("role")
 
+            st.session_state["rights"] = {
+                "internal_store_transfer": user.get("can_access_internal_store_transfer", False),
+                "assortment": user.get("can_access_assortment", False),
+                "ip": user.get("can_access_ip", False),
+            }
+
             st.success("🎉 Login successful! Redirecting...")
             time.sleep(0.8)
             _safe_rerun()
@@ -101,4 +107,3 @@ if not st.session_state.get("logged_in"):
     show_login()
 else:
     st.success(f"Logged in as {st.session_state['username']}")
-
