@@ -46,13 +46,12 @@ def handle_login():
 
 
 def handle_logout():
+    for k in list(st.session_state.keys()):
+        del st.session_state[k]
+
     st.session_state["logged_in"] = False
-    st.session_state["username"] = ""
-    st.session_state["role"] = ""
-    st.session_state["user_id"] = ""
     st.session_state["selected_page"] = "Home 🏠"
     st.rerun()
-
 
 
 # ---------- PAGE MAPS ----------
@@ -60,10 +59,11 @@ def get_private_pages():
     pages = {
         "Home 🏠": home.show_home,
         "Contact 📞": contact.show_contact,
-        "Internal Store Transfer📦": network.show_Network,   # Always available
     }
 
-    # Admin page only for admin
+    if st.session_state.rights.get("internal_store_transfer"):
+        pages["Internal Store Transfer📦"] = network.show_Network
+
     if st.session_state.role == "admin":
         pages["Admin Panel 🛠️"] = admin.show_admin_panel
 
@@ -140,30 +140,31 @@ def fixed_navbar(page_names):
 
 
 # ---------- ROUTER ----------
-clicked = st.query_params.get("page")
+selected = unquote(
+    st.query_params.get("page", st.session_state.get("selected_page", "Home 🏠"))
+)
 
-# If user clicked a navbar link, update selected page
-if clicked:
-    st.session_state["selected_page"] = clicked
+if selected != st.session_state.get("selected_page"):
+    st.session_state["selected_page"] = selected
 
-# Always read from session_state only (no fallback logic here)
-selected = st.session_state.get("selected_page", "Home 🏠")
-
-# Load available pages
-PAGES = get_private_pages() if st.session_state.get("logged_in", False) else PUBLIC_PAGES
+# Load routes
+if st.session_state.get("logged_in", False):
+    PAGES = get_private_pages()
+else:
+    PAGES = PUBLIC_PAGES
 
 # Render navbar
 fixed_navbar(list(PAGES.keys()))
 
-# Page handling
+# Route
 if selected == "Logout 🚪":
     handle_logout()
 elif selected in PAGES:
     PAGES[selected]()
 else:
-    st.session_state["selected_page"] = "Home 🏠"
-    PAGES["Home 🏠"]()
-
-
+    if st.session_state.get("logged_in", False):
+        home.show_home()
+    else:
+        login.show_login()
 
 
