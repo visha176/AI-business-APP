@@ -449,8 +449,7 @@ def show_city():
             file_name="transfer_details_city.xlsx"
         )
 
-if __name__ == "__main__":
-    show_city()
+
 
 
 
