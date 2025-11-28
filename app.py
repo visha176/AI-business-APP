@@ -17,12 +17,12 @@ defaults = {
     "username": "",
     "role": "",
     "rights": {},
-    "selected_page": "home",   # slug, not emoji
+    "selected_page": "home",   # page slug, no emojis here
 }
 for k, v in defaults.items():
     st.session_state.setdefault(k, v)
 
-# If old emoji names slipped into session, map them back to slugs
+# Map any old emoji names → new slugs (safety)
 legacy_map = {
     "Home 🏠": "home",
     "Contact 📞": "contact",
@@ -47,14 +47,13 @@ LABELS = {
 
 # ---------- LOGOUT ----------
 def handle_logout():
-    # IMPORTANT: do NOT clear() – that kills everything
+    # Don't clear the whole session, just reset auth info
     st.session_state["logged_in"] = False
     st.session_state["username"] = ""
     st.session_state["role"] = ""
     st.session_state["rights"] = {}
     st.session_state["selected_page"] = "home"
     st.rerun()
-
 
 # ---------- PAGE DEFINITIONS ----------
 def get_private_pages():
@@ -63,7 +62,7 @@ def get_private_pages():
         "contact": contact.show_contact,
     }
 
-    # Internal Store Transfer
+    # Internal Store Transfer page
     if st.session_state.rights.get("internal_store_transfer", False):
         pages["transfer"] = network.show_Network
 
@@ -81,82 +80,99 @@ PUBLIC_PAGES = {
     "login": login.show_login,
 }
 
-# ---------- NAVBAR ----------
+# ---------- NAVBAR (button-based, no <a href>) ----------
 def fixed_navbar(slugs):
     current = st.session_state.get("selected_page", "home")
 
-    links = []
-    for slug in slugs:
-        label = LABELS.get(slug, slug.title())
-        active = "active" if slug == current else ""
-        links.append(
-            f'<a class="nav-link {active}" href="/?page={slug}">{label}</a>'
-        )
-
-    html = f"""
-    <style>
-        #top-nav {{
+    # CSS for fixed black bar
+    st.markdown(
+        """
+        <style>
+        .top-nav-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 65px;
-            background: #000;
+            background: #000000;
             display: flex;
-            justify-content: flex-end;
             align-items: center;
-            gap: 24px;
+            justify-content: flex-end;
             padding: 0 40px;
-            z-index: 99999;
-        }}
-        .nav-link {{
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 18px;
-            padding: 6px 12px;
-            border-radius: 6px;
-        }}
-        .nav-link:hover {{
-            background: #222;
-            color: #ffcc00;
-        }}
-        .nav-link.active {{
-            background: #333;
-            color: #ffcc00;
-            border-bottom: 2px solid #ffcc00;
-        }}
-        .block-container {{
-            padding-top: 95px !important;
-        }}
-        header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {{
+            gap: 24px;
+            z-index: 9999;
+        }
+        .block-container {
+            padding-top: 95px !important;  /* push content below bar */
+        }
+        header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {
             display: none !important;
-        }}
-    </style>
-    <div id="top-nav">
-        {"".join(links)}
-    </div>
-    """
+        }
+        /* Make navbar buttons look like links */
+        button.nav-btn {
+            background: none !important;
+            border: none !important;
+            color: #ffffff !important;
+            font-size: 18px !important;
+            padding: 6px 12px !important;
+            border-radius: 6px !important;
+        }
+        button.nav-btn:hover {
+            background: #222222 !important;
+            color: #ffcc00 !important;
+        }
+        button.nav-btn-active {
+            background: #333333 !important;
+            color: #ffcc00 !important;
+            border-bottom: 2px solid #ffcc00 !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # VERY IMPORTANT: markdown + unsafe_allow_html=True
-    st.markdown(html, unsafe_allow_html=True)
+    # Use a horizontal container for the nav buttons
+    nav_area = st.container()
+    with nav_area:
+        cols = st.columns(len(slugs))
+        for i, slug in enumerate(slugs):
+            label = LABELS.get(slug, slug.title())
+            is_active = (slug == current)
+            btn_class = "nav-btn-active" if is_active else "nav-btn"
+            if cols[i].button(label, key=f"nav_{slug}", help=label, type="secondary"):
+                st.session_state["selected_page"] = slug
+                st.rerun()
 
+        # Inject a div so our CSS can hook into it
+        st.markdown(
+            """
+            <script>
+            const root = window.parent.document;
+            const blocks = root.querySelectorAll('section.main div[data-testid="stHorizontalBlock"]');
+            if (blocks.length > 0) {
+                blocks[0].classList.add('top-nav-container');
+            }
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
 
 # ---------- ROUTER ----------
+
+# 1. Decide which pages are available
 if st.session_state.get("logged_in", False):
     PAGES = get_private_pages()
 else:
     PAGES = PUBLIC_PAGES
 
-# Read ?page=home from the URL
-page_query = st.query_params.get("page", "home").lower()
-
-if page_query not in PAGES:
-    page_query = "home"
-
-st.session_state["selected_page"] = page_query
-
-# Show navbar
+# 2. Render navbar with the available pages
 fixed_navbar(list(PAGES.keys()))
 
-# Show current page
-PAGES[st.session_state["selected_page"]]()
+# 3. Decide which page to show based ONLY on session_state
+selected = st.session_state.get("selected_page", "home")
+if selected not in PAGES:
+    selected = "home"
+    st.session_state["selected_page"] = "home"
+
+# 4. Render selected page
+PAGES[selected]()
