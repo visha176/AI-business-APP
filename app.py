@@ -126,6 +126,23 @@ def fixed_navbar(slugs):
             color: #ffcc00 !important;
             border-bottom: 2px solid #ffcc00 !important;
         }
+        .st-emotion-cache-1n6tfoc {
+    display: flex;
+    gap: -2rem;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-width: 1rem;
+    flex-flow: column;
+    /* flex: 1 1 0%; */
+    -webkit-box-align: start;
+    align-items: start;
+    -webkit-box-pack: start;
+    justify-content: start;
+    overflow: visible;
+    margin-top: -7rem;
+    background: #080808;
+}
         </style>
         """,
         unsafe_allow_html=True,
@@ -176,3 +193,4 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
