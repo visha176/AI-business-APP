@@ -2,13 +2,11 @@ import time
 import streamlit as st
 from utils import get_user
 
-# Verify_password removed — no longer needed
-
 def _safe_rerun():
     if hasattr(st, "rerun"):
         st.rerun()
     else:
-        st.experimental_rerun()  # For older versions
+        st.experimental_rerun()
 
 
 def login_page():
@@ -17,17 +15,18 @@ def login_page():
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    if st.session_state.get("logged_in"):
+    # If already logged in, do not display form again
+    if st.session_state.get("logged_in", False):
         st.success(f"✅ Already logged in as {st.session_state['username']}")
         return
 
     if st.button("Login"):
-        # Call API with both username + password
         user = get_user(username, password)
 
         if user:
+            # SAVE USER SESSION STATE HERE
             st.session_state["logged_in"] = True
-            st.session_state["username"] = user["username"]
+            st.session_state["username"] = user.get("username")
             st.session_state["user_id"] = user.get("id")
             st.session_state["role"] = user.get("role")
 
@@ -37,9 +36,12 @@ def login_page():
                 "ip": user.get("can_access_ip", False),
             }
 
+            st.session_state["selected_page"] = "Home 🏠"  # land on home
+
             st.success("🎉 Login successful! Redirecting...")
-            time.sleep(0.8)
+            time.sleep(0.5)
             _safe_rerun()
+
         else:
             st.error("❌ Invalid username or password")
 
@@ -59,23 +61,14 @@ def show_login():
         }
         .st-emotion-cache-5qfegl {
             display: inline-flex;
-            -webkit-box-align: center;
             align-items: center;
-            -webkit-box-pack: center;
             justify-content: center;
             font-weight: 400;
             padding: 0.25rem 0.75rem;
             border-radius: 0.5rem;
             min-height: 2.5rem;
-            margin: 0px;
-            line-height: 1.6;
-            text-transform: none;
-            font-size: inherit;
-            font-family: inherit;
-            color: inherit;
             width: 100%;
             cursor: pointer;
-            user-select: none;
             background-color: rgb(0 0 0);
         }
         h1{font-weight:700;}
@@ -88,22 +81,16 @@ def show_login():
     col1, col2, col3 = st.columns([1, 0.5, 1])
 
     with col1:
-        if not st.session_state.get("logged_in"):
-            login_page()
-        else:
-            st.success(f"Logged in as: {st.session_state['username']}")
-
-    with col2:
-        st.write("")
+        login_page()
 
     with col3:
         st.header("Welcome")
-        st.write("Welcome to the Internal Store Transfer and Assortment Management App!")
-        st.write("Upload your Excel file to manage assortments and streamline internal store transfers.")
+        st.write("Internal Store Transfer & Assortment Management System")
+        st.write("Upload files and access internal inventory systems.")
 
 
-# Entry point
-if not st.session_state.get("logged_in"):
+# ENTRY POINT
+if not st.session_state.get("logged_in", False):
     show_login()
 else:
     st.success(f"Logged in as {st.session_state['username']}")
