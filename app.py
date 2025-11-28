@@ -59,55 +59,60 @@ PUBLIC_PAGES = {
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
-    nav_items = ""
+    nav_html = ""
     for name in page_names:
         active_class = "active" if name == current else ""
-        nav_items += f"""
+        nav_html += f"""
             <button class="nav-btn {active_class}" onclick="window.location.href='/?page={name}'">
                 {name}
             </button>
         """
 
     st.markdown(f"""
-        <style>
-            #top-nav {{
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 65px;
-                background: #000;
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                gap: 30px;
-                padding: 0 40px;
-                z-index: 9999;
-            }}
-            .nav-btn {{
-                background: none;
-                border: none;
-                font-size: 18px;
-                color: white;
-                cursor: pointer;
-            }}
-            .nav-btn:hover {{ color: #ffcc00; }}
-            .active {{
-                color: #ffcc00;
-                font-weight: bold;
-            }}
-            .block-container {{
-                padding-top: 100px !important;
-            }}
-            header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {{
-                display: none !important;
-            }}
-        </style>
+    <style>
+        #top-nav {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 65px;
+            background: #000;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 40px;
+            gap: 25px;
+            z-index: 99999;
+        }}
 
-        <div id="top-nav">
-            {nav_items}
-        </div>
-        """, unsafe_allow_html=True)
+        .nav-btn {{
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }}
+        .nav-btn:hover {{
+            color: #ffcc00;
+        }}
+        .active {{
+            color: #ffcc00;
+            font-weight: bold;
+        }}
+
+        .block-container {{
+            padding-top: 90px !important;
+        }}
+
+        header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {{
+            display: none !important;
+        }}
+    </style>
+
+    <div id="top-nav">
+        {nav_html}
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # ---------- ROUTER ----------
@@ -128,4 +133,5 @@ fixed_navbar(list(PAGES.keys()))
 # Render selected page
 selected_page = st.session_state.get("selected_page", "Home 🏠")
 PAGES[selected_page]()
+
 
