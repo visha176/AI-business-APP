@@ -129,7 +129,20 @@ def fixed_navbar(slugs):
     background-color: rgb(0 0 0);
     border: 1px solid rgba(49, 51, 63, 0.2);
 }
-
+.st-emotion-cache-wfksaw {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    min-width: 1rem;
+    flex-flow: column;
+    flex: 1 1 0%;
+    -webkit-box-align: stretch;
+    align-items: stretch;
+    -webkit-box-pack: start;
+    justify-content: start;
+}
 /* 2️⃣ Push page content below the fixed navbar */
 .block-container {
     padding-top: 95px !important;  /* adjust if needed */
@@ -213,6 +226,7 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
 
 
 
