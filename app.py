@@ -1,5 +1,4 @@
 import streamlit as st
-from urllib.parse import quote, unquote
 
 # pages
 import pages.home as home
@@ -43,15 +42,12 @@ def handle_login(username, password):
         "ip": user.get("can_access_ip", False),
     }
 
-    # First landing page after login
     st.session_state["selected_page"] = "Home 🏠"
-
     st.rerun()
     return True
 
 
 def handle_logout():
-    # Clear everything and reset basics
     st.session_state.clear()
     st.session_state["logged_in"] = False
     st.session_state["selected_page"] = "Home 🏠"
@@ -64,13 +60,10 @@ def get_private_pages():
         "Home 🏠": home.show_home,
         "Contact 📞": contact.show_contact,
     }
-
     if st.session_state.rights.get("internal_store_transfer"):
         pages["Internal Store Transfer📦"] = network.show_Network
-
     if st.session_state.role == "admin":
         pages["Admin Panel 🛠️"] = admin.show_admin_panel
-
     pages["Logout 🚪"] = handle_logout
     return pages
 
@@ -91,79 +84,28 @@ ICONS = {
 }
 
 
-# ---------- NAVBAR ----------
+# ---------- NAVBAR USING SESSION STATE ONLY ----------
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
-    links_html = []
-    for name in page_names:
-        href = f"?page={quote(name, safe='')}"
+    cols = st.columns(len(page_names))
+    for idx, name in enumerate(page_names):
         active = (name == current)
-        color = "#ffcc00" if active else "#ffffff"
+        btn_color = "background-color:#ffcc00;color:black;" if active else "background-color:#000;color:white;"
 
-        links_html.append(
-            f"<a href='{href}' style='color:{color};text-decoration:none;font-size:17px'>"
-            f"{ICONS.get(name, '')} {name}</a>"
-        )
-
-    st.markdown(
-        f"""
-        <div id="fixedNav">{' '.join(links_html)}</div>
-        <style>
-            #fixedNav {{
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 70px;
-                background: #000;
-                color: #fff;
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                gap: 36px;
-                padding: 0 40px;
-                z-index: 9999;
-                box-shadow: 0 2px 10px rgba(0,0,0,.5);
-            }}
-            .block-container {{
-                padding-top: 100px !important;
-            }}
-            header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {{
-                display: none !important;
-            }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+        if cols[idx].button(f"{ICONS.get(name,'')} {name}", key=f"nav_{name}", help=name):
+            st.session_state["selected_page"] = name
+            st.rerun()
 
 
-# ---------- ROUTER (FIXED) ----------
-# 1) Build available pages based on auth
-if st.session_state.get("logged_in"):
-    PAGES = get_private_pages()
-else:
-    PAGES = PUBLIC_PAGES
+# ---------- ROUTER ----------
+PAGES = get_private_pages() if st.session_state.get("logged_in") else PUBLIC_PAGES
 
-# 2) If logged in, make sure Login 🔑 never shows
 if st.session_state.get("logged_in") and "Login 🔑" in PAGES:
     del PAGES["Login 🔑"]
 
-# 3) Read clicked page from URL, but ONLY trust it if it exists in PAGES
-clicked_raw = st.query_params.get("page")
-if clicked_raw:
-    clicked = unquote(clicked_raw)
-    if clicked in PAGES:
-        st.session_state["selected_page"] = clicked
-
-# 4) Fallback: if selected_page is invalid for current PAGES, go to Home
-selected = st.session_state.get("selected_page", "Home 🏠")
-if selected not in PAGES:
-    selected = "Home 🏠"
-    st.session_state["selected_page"] = selected
-
-# 5) Render navbar and selected page
 fixed_navbar(list(PAGES.keys()))
 
+selected = st.session_state.get("selected_page", "Home 🏠")
 page_handler = PAGES[selected]
 page_handler()
