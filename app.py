@@ -60,10 +60,13 @@ def get_private_pages():
         "Home 🏠": home.show_home,
         "Contact 📞": contact.show_contact,
     }
+
     if st.session_state.rights.get("internal_store_transfer"):
         pages["Internal Store Transfer📦"] = network.show_Network
+
     if st.session_state.role == "admin":
         pages["Admin Panel 🛠️"] = admin.show_admin_panel
+
     pages["Logout 🚪"] = handle_logout
     return pages
 
@@ -88,14 +91,52 @@ ICONS = {
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
-    cols = st.columns(len(page_names))
-    for idx, name in enumerate(page_names):
-        active = (name == current)
-        btn_color = "background-color:#ffcc00;color:black;" if active else "background-color:#000;color:white;"
+    st.markdown(
+        """
+        <style>
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: #000000cc;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 25px;
+            gap: 25px;
+            z-index: 9999;
+        }
+        .top-nav button {
+            background-color: transparent;
+            border: none;
+            font-size: 17px;
+            color: white;
+            cursor: pointer;
+        }
+        .top-nav button.active {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+        .block-container { padding-top: 90px !important; }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
-        if cols[idx].button(f"{ICONS.get(name,'')} {name}", key=f"nav_{name}", help=name):
+    st.markdown("<div class='top-nav'>", unsafe_allow_html=True)
+    for name in page_names:
+        active = (name == current)
+        button_class = "active" if active else ""
+        if st.button(
+            f"{ICONS.get(name,'')} {name}",
+            key=f"nav_{name}",
+            help=name
+        ):
             st.session_state["selected_page"] = name
             st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ---------- ROUTER ----------
