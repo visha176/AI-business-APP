@@ -132,8 +132,7 @@ def fixed_navbar(slugs):
     align-items: flex-start;
     justify-content: flex-start;
     overflow: visible;
-    color: #000000;
-    background-color: black;
+    
 }
         </style>
         """,
@@ -185,6 +184,7 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
 
 
 
