@@ -94,7 +94,6 @@ def fixed_navbar(slugs):
             left: 0;
             width: 100%;
             height: 65px;
-            background: #000000;
             display: flex;
             align-items: center;
             justify-content: flex-end;
@@ -112,7 +111,6 @@ def fixed_navbar(slugs):
         button.nav-btn {
             background: none !important;
             border: none !important;
-            color: #ffffff !important;
             font-size: 18px !important;
             padding: 6px 12px !important;
             border-radius: 6px !important;
@@ -193,4 +191,5 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
 
