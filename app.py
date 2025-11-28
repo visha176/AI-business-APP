@@ -43,7 +43,7 @@ def handle_login(username, password):
         "ip": user.get("can_access_ip", False),
     }
 
-    # Force landing page after login
+    # First landing page after login
     st.session_state["selected_page"] = "Home 🏠"
 
     st.rerun()
@@ -51,9 +51,7 @@ def handle_login(username, password):
 
 
 def handle_logout():
-    for k in list(st.session_state.keys()):
-        del st.session_state[k]
-
+    st.session_state.clear()
     st.session_state["logged_in"] = False
     st.session_state["selected_page"] = "Home 🏠"
     st.rerun()
@@ -113,25 +111,25 @@ def fixed_navbar(page_names):
         <style>
             #fixedNav {{
                 position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 70px;
-                background: #000;
-                color: #fff;
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                gap: 36px;
-                padding: 0 40px;
-                z-index: 9999;
-                box-shadow: 0 2px 10px rgba(0,0,0,.5);
+                top:0;
+                left:0;
+                width:100%;
+                height:70px;
+                background:#000;
+                color:#fff;
+                display:flex;
+                justify-content:flex-end;
+                align-items:center;
+                gap:36px;
+                padding:0 40px;
+                z-index:9999;
+                box-shadow:0 2px 10px rgba(0,0,0,.5);
             }}
             .block-container {{
-                padding-top: 100px !important;
+                padding-top:100px !important;
             }}
             header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {{
-                display: none !important;
+                display:none !important;
             }}
         </style>
         """,
@@ -140,23 +138,23 @@ def fixed_navbar(page_names):
 
 
 # ---------- ROUTER ----------
-selected_url = st.query_params.get("page")
+clicked_page = st.query_params.get("page")
 
-if selected_url:
-    st.session_state["selected_page"] = unquote(selected_url)
+if clicked_page:
+    st.session_state["selected_page"] = unquote(clicked_page)
 
-# Define final pages list
+# Available pages
 PAGES = get_private_pages() if st.session_state.get("logged_in") else PUBLIC_PAGES
 
-# Remove Login when logged in
+# Remove Login for authenticated users
 if st.session_state.get("logged_in") and "Login 🔑" in PAGES:
     del PAGES["Login 🔑"]
 
-# Render navbar
+# Navbar render
 fixed_navbar(list(PAGES.keys()))
 
-# Call selected page
-selected = st.session_state["selected_page"]
+# Render selected page
+selected = st.session_state.get("selected_page", "Home 🏠")
 page_handler = PAGES.get(selected, None)
 
 if page_handler:
