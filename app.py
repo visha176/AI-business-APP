@@ -8,10 +8,9 @@ import pages.login as login
 import admin
 from utils import get_user
 
-# ---------- CONFIG ----------
 st.set_page_config(page_title="AI Business App", layout="wide")
 
-# ---------- SESSION STATE DEFAULTS ----------
+# ---------- SESSION DEFAULTS ----------
 defaults = {
     "logged_in": False,
     "username": "",
@@ -19,8 +18,13 @@ defaults = {
     "rights": {},
     "selected_page": "Home",
 }
+
 for k, v in defaults.items():
     st.session_state.setdefault(k, v)
+
+# FIX invalid old key stored in session state
+if st.session_state.get("selected_page") not in ["Home", "Contact", "Login", "Internal", "Admin", "Logout"]:
+    st.session_state["selected_page"] = "Home"
 
 
 # ---------- LOGOUT ----------
@@ -31,7 +35,7 @@ def handle_logout():
     st.rerun()
 
 
-# ---------- PRIVATE & PUBLIC PAGES ----------
+# ---------- PAGE DEFINITIONS ----------
 def get_private_pages():
     pages = {
         "Home": home.show_home,
@@ -67,22 +71,19 @@ LABELS = {
 # ---------- NAVBAR ----------
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home")
-
     nav = ""
     for page in page_names:
-        label = LABELS.get(page, page)
         active = "active" if page == current else ""
         nav += f"""
         <button class="nav-btn {active}" onclick="window.location.href='/?page={page}'">
-            {label}
+            {LABELS.get(page, page)}
         </button>
         """
 
     st.markdown(f"""
     <style>
         #top-nav {{
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 65px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 65px;
             background: black;
             display: flex; align-items: center; justify-content: flex-end;
             padding: 0 40px; gap: 22px;
@@ -92,19 +93,18 @@ def fixed_navbar(page_names):
             background: none; border: none; color: white;
             font-size: 18px; cursor: pointer;
         }}
-        .nav-btn:hover {{ color: #ffcc00; }}
-        .active {{ color: #ffcc00; font-weight: bold; }}
+        .nav-btn:hover {{ color:#ffcc00; }}
+        .active {{ color:#ffcc00; font-weight:bold; }}
         .block-container {{ padding-top: 95px !important; }}
         header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {{
-            display: none !important;
+            display:none !important;
         }}
     </style>
-
     <div id="top-nav">{nav}</div>
     """, unsafe_allow_html=True)
 
 
-# ---------- ROUTER & PAGE SELECTION ----------
+# ---------- ROUTER ----------
 page_query = st.query_params.get("page")
 
 if st.session_state.get("logged_in"):
@@ -116,5 +116,4 @@ if page_query in PAGES:
     st.session_state["selected_page"] = page_query
 
 fixed_navbar(list(PAGES.keys()))
-
 PAGES[st.session_state["selected_page"]]()
