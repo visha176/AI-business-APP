@@ -103,7 +103,7 @@ def fixed_navbar(slugs):
     gap: 24px;
 
     padding: 0 40px;
-    background: rgba(0,0,0,0);
+    background: black;
     backdrop-filter: blur(6px);
     z-index: 9999;
 }
@@ -191,6 +191,7 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
 
 
 
