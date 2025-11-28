@@ -60,49 +60,50 @@ PUBLIC_PAGES = {
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
+    # Global styling for the nav row + buttons
     st.markdown(
         """
         <style>
-        #top-nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 65px;
-            background: #000;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 28px;
-            padding: 0 30px;
-            z-index: 9999;
+        /* Make the first horizontal block (our nav) look like a top bar */
+        div[data-testid="stHorizontalBlock"]:first-of-type {
+            background-color: #000;
+            padding: 10px 30px 5px 30px;
         }
-        .block-container { padding-top: 110px !important; }
-        button.navbtn {
-            background: none;
-            color: white;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
+
+        /* Remove extra top padding so content hugs the nav bar */
+        .block-container {
+            padding-top: 0px !important;
         }
-        button.navbtn:hover { color: #ffcc00; }
-        .active { color: #ffcc00; font-weight: bold; }
-        div[data-testid="stToolbar"], div[data-testid="stDecoration"], header {display:none !important;}
+
+        /* Style nav buttons */
+        div[data-testid="stHorizontalBlock"]:first-of-type button {
+            background-color: transparent !important;
+            color: #ffffff !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-size: 17px;
+        }
+
+        /* Hover effect */
+        div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
+            color: #ffcc00 !important;
+        }
         </style>
-        <div id="top-nav">
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
+    # This row becomes the "top bar"
     cols = st.columns(len(page_names))
 
     for i, name in enumerate(page_names):
-        active = "active" if name == current else ""
-        if cols[i].button(name, key=f"nav_{name}", help=name):
+        is_active = name == current
+        label = f"⭐ {name}" if is_active else name  # simple active marker (optional)
+
+        if cols[i].button(label, key=f"nav_{name}"):
             st.session_state["selected_page"] = name
             st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ---------- ROUTER ----------
@@ -115,3 +116,4 @@ fixed_navbar(list(PAGES.keys()))
 
 selected_page = st.session_state.get("selected_page", "Home 🏠")
 PAGES[selected_page]()
+
