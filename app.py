@@ -124,22 +124,15 @@ def fixed_navbar(slugs):
             color: #ffcc00 !important;
             border-bottom: 2px solid #ffcc00 !important;
         }
-        .st-emotion-cache-5qfegl {
+        .st-emotion-cache-1permvm {
     display: flex;
-    flex-flow: row;
-    align-items: center;
-    justify-content: space-between;
-
+    gap: 1rem;
     width: 100%;
-    max-width: 100%;
-    min-width: 1rem;
-
-    /* control height with padding instead of big margin */
-    padding: 0.4rem 1.5rem;      /* <- smaller height */
-    margin-top: 0;               /* or -1rem if you still want it a bit higher */
-
-    background: #080808;
+    flex-flow: row-reverse wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
     overflow: visible;
+    color: white;
 }
         </style>
         """,
@@ -191,6 +184,7 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
 
 
 
