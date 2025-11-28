@@ -17,12 +17,12 @@ defaults = {
     "username": "",
     "role": "",
     "rights": {},
-    "selected_page": "home",   # use slug, no emoji
+    "selected_page": "home",   # use slug (no emoji)
 }
 for k, v in defaults.items():
     st.session_state.setdefault(k, v)
 
-# map old values (with emojis) → new slugs
+# Map any old emoji keys → new slugs (for safety)
 legacy_map = {
     "Home 🏠": "home",
     "Home": "home",
@@ -30,7 +30,7 @@ legacy_map = {
     "Contact": "contact",
     "Login 🔑": "login",
     "Login": "login",
-    "Internal Store Transfer📦": "internal",
+    "Internal Store Transfer📦": "transfer",
     "Admin Panel 🛠️": "admin",
     "Logout 🚪": "logout",
 }
@@ -38,6 +38,15 @@ sel = st.session_state.get("selected_page")
 if sel in legacy_map:
     st.session_state["selected_page"] = legacy_map[sel]
 
+# Labels for navbar
+LABELS = {
+    "home": "🏠 Home",
+    "contact": "📞 Contact",
+    "login": "🔑 Login",
+    "transfer": "📦 Internal Store Transfer",
+    "admin": "🛠️ Admin Panel",
+    "logout": "🚪 Logout",
+}
 
 # ---------- LOGOUT ----------
 def handle_logout():
@@ -45,7 +54,6 @@ def handle_logout():
     st.session_state["logged_in"] = False
     st.session_state["selected_page"] = "home"
     st.rerun()
-
 
 # ---------- PAGE DEFINITIONS ----------
 def get_private_pages():
@@ -55,7 +63,7 @@ def get_private_pages():
     }
 
     if st.session_state.rights.get("internal_store_transfer", False):
-        pages["internal"] = network.show_Network
+        pages["transfer"] = network.show_Network  # <-- your internal store page
 
     if st.session_state.role == "admin":
         pages["admin"] = admin.show_admin_panel
@@ -63,29 +71,18 @@ def get_private_pages():
     pages["logout"] = handle_logout
     return pages
 
-
 PUBLIC_PAGES = {
     "home": home.show_home,
     "contact": contact.show_contact,
     "login": login.show_login,
 }
 
-LABELS = {
-    "home": "🏠 Home",
-    "contact": "📞 Contact",
-    "login": "🔑 Login",
-    "logout": "🚪 Logout",
-    "internal": "📦 Internal Store Transfer",
-    "admin": "🛠 Admin Panel",
-}
-
-
-# ---------- NAVBAR (anchors, not buttons) ----------
-def fixed_navbar(page_slugs):
+# ---------- NAVBAR ----------
+def fixed_navbar(slugs):
     current = st.session_state.get("selected_page", "home")
 
     links_html = ""
-    for slug in page_slugs:
+    for slug in slugs:
         label = LABELS.get(slug, slug.title())
         active_class = "active" if slug == current else ""
         links_html += f"""
@@ -118,12 +115,12 @@ def fixed_navbar(page_slugs):
                 border-radius: 6px;
             }}
             .nav-link:hover {{
-                background:#222;
+                background: #222;
                 color: #ffcc00;
             }}
             .nav-link.active {{
-                background:#333;
-                color:#ffcc00;
+                background: #333;
+                color: #ffcc00;
                 border-bottom: 2px solid #ffcc00;
             }}
             .block-container {{
@@ -133,32 +130,29 @@ def fixed_navbar(page_slugs):
                 display: none !important;
             }}
         </style>
-
         <div id="top-nav">
             {links_html}
         </div>
     """)
 
-
 # ---------- ROUTER ----------
-# decide which pages are available
+# Pick which pages are available
 if st.session_state.get("logged_in", False):
     PAGES = get_private_pages()
 else:
     PAGES = PUBLIC_PAGES
 
-# read ?page= slug from URL
+# Read ?page= from URL
 page_query = st.query_params.get("page")
-if page_query in PAGES:
+if page_query and page_query in PAGES:
     st.session_state["selected_page"] = page_query
 
-# render navbar
-fixed_navbar(list(PAGES.keys()))
-
-# safety fallback
+# Safety: if selected_page not in current PAGES, go home
 if st.session_state["selected_page"] not in PAGES:
     st.session_state["selected_page"] = "home"
 
-# render selected page
-PAGES[st.session_state["selected_page"]]()
+# Show navbar
+fixed_navbar(list(PAGES.keys()))
 
+# Render page
+PAGES[st.session_state["selected_page"]]()
