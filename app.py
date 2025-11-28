@@ -94,8 +94,7 @@ def fixed_navbar(page_slugs):
             </a>
         """
 
-    st.markdown(
-        f"""
+    st.html(f"""
         <style>
             #top-nav {{
                 position: fixed;
@@ -109,20 +108,22 @@ def fixed_navbar(page_slugs):
                 align-items: center;
                 gap: 24px;
                 padding: 0 40px;
-                z-index: 9999;
+                z-index: 99999;
             }}
             .nav-link {{
                 color: #ffffff;
                 text-decoration: none;
                 font-size: 18px;
-                padding: 4px 10px;
+                padding: 6px 12px;
+                border-radius: 6px;
             }}
             .nav-link:hover {{
+                background:#222;
                 color: #ffcc00;
             }}
             .nav-link.active {{
-                color: #ffcc00;
-                font-weight: 600;
+                background:#333;
+                color:#ffcc00;
                 border-bottom: 2px solid #ffcc00;
             }}
             .block-container {{
@@ -136,9 +137,7 @@ def fixed_navbar(page_slugs):
         <div id="top-nav">
             {links_html}
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """)
 
 
 # ---------- ROUTER ----------
@@ -162,3 +161,4 @@ if st.session_state["selected_page"] not in PAGES:
 
 # render selected page
 PAGES[st.session_state["selected_page"]]()
+
