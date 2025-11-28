@@ -2,6 +2,7 @@ import time
 import streamlit as st
 from utils import get_user
 
+
 def _safe_rerun():
     if hasattr(st, "rerun"):
         st.rerun()
@@ -36,7 +37,8 @@ def login_page():
                 "ip": user.get("can_access_ip", False),
             }
 
-            st.session_state["selected_page"] = "Home 🏠"  # land on home
+            # land on home after login
+            st.session_state["selected_page"] = "Home 🏠"
 
             st.success("🎉 Login successful! Redirecting...")
             time.sleep(0.5)
@@ -87,10 +89,3 @@ def show_login():
         st.header("Welcome")
         st.write("Internal Store Transfer & Assortment Management System")
         st.write("Upload files and access internal inventory systems.")
-
-
-# ENTRY POINT
-if not st.session_state.get("logged_in", False):
-    show_login()
-else:
-    st.success(f"Logged in as {st.session_state['username']}")
