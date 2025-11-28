@@ -478,8 +478,7 @@ def show_regional():
         )
 
 
-if __name__ == "__main__":
-    show_regional()
+
 
 
 
