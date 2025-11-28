@@ -88,58 +88,58 @@ def fixed_navbar(slugs):
     st.markdown(
         """
         <style>
-        .top-nav-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 65px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 0 40px;
-            gap: 24px;
-            z-index: 9999;
-        }
-        .block-container {
-            padding-top: 95px !important;  /* push content below bar */
-        }
-        header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {
-            display: none !important;
-        }
-        /* Make navbar buttons look like links */
-        button.nav-btn {
-            background: none !important;
-            border: none !important;
-            font-size: 18px !important;
-            padding: 6px 12px !important;
-            border-radius: 6px !important;
-        }
-        button.nav-btn:hover {
-            background: #222222 !important;
-            color: #ffcc00 !important;
-        }
-        button.nav-btn-active {
-            background: #333333 !important;
-            color: #ffcc00 !important;
-            border-bottom: 2px solid #ffcc00 !important;
-        }
-        .st-emotion-cache-1n6tfoc {
-    display: flex;
-    flex-direction: row;     /* horizontal menu */
-    align-items: center;     /* centered vertically */
-    justify-content: flex-end;  /* or center / space-between */
-    gap: 1rem;
-
-    width: 100%;
-    padding: 0.6rem 1.2rem;  /* controls height */
-    background: rgba(0,0,0,0.6);  /* optional background bar */
-    backdrop-filter: blur(6px);   /* nice glassy navbar effect */
-
-    position: sticky;   /* sticks at the top */
+        /* 1️⃣ Use the Streamlit container as the navbar */
+.st-emotion-cache-1n6tfoc {
+    position: fixed;          /* ⬅ fixed at very top */
     top: 0;
-    z-index: 999;
+    left: 0;
+    width: 100%;
+    height: 65px;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 24px;
+
+    padding: 0 40px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 9999;
 }
+
+/* 2️⃣ Push page content below the fixed navbar */
+.block-container {
+    padding-top: 95px !important;  /* adjust if needed */
+}
+
+/* 3️⃣ Hide default Streamlit header/toolbar */
+header,
+div[data-testid="stToolbar"],
+div[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* 4️⃣ Optional – style nav buttons */
+button.nav-btn {
+    background: none !important;
+    border: none !important;
+    font-size: 18px !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
+}
+
+button.nav-btn:hover {
+    background: #222222 !important;
+    color: #ffcc00 !important;
+}
+
+button.nav-btn-active {
+    background: #333333 !important;
+    color: #ffcc00 !important;
+    border-bottom: 2px solid #ffcc00 !important;
+}
+
 
         </style>
         """,
@@ -191,6 +191,7 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
 
 
 
