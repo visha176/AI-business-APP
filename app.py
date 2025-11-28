@@ -56,7 +56,6 @@ PUBLIC_PAGES = {
 }
 
 
-# ---------- NAVBAR ----------
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
@@ -77,7 +76,7 @@ def fixed_navbar(page_names):
                 left: 0;
                 width: 100%;
                 height: 65px;
-                background: #000000;
+                background: #000;
                 display: flex;
                 justify-content: flex-end;
                 align-items: center;
@@ -92,9 +91,7 @@ def fixed_navbar(page_names):
                 color: white;
                 cursor: pointer;
             }}
-            .nav-btn:hover {{
-                color: #ffcc00;
-            }}
+            .nav-btn:hover {{ color: #ffcc00; }}
             .active {{
                 color: #ffcc00;
                 font-weight: bold;
@@ -106,8 +103,11 @@ def fixed_navbar(page_names):
                 display: none !important;
             }}
         </style>
-        <div id="top-nav">{nav_items}</div>
-    """, unsafe_allow_html=True)
+
+        <div id="top-nav">
+            {nav_items}
+        </div>
+        """, unsafe_allow_html=True)
 
 
 # ---------- ROUTER ----------
@@ -128,3 +128,4 @@ fixed_navbar(list(PAGES.keys()))
 # Render selected page
 selected_page = st.session_state.get("selected_page", "Home 🏠")
 PAGES[selected_page]()
+
