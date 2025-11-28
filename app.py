@@ -92,51 +92,66 @@ def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
     st.markdown(
-        """
+        f"""
         <style>
-        .top-nav {
+        .top-nav {{
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 60px;
-            background: #000000cc;
+            height: 65px;
+            background: #000000d9;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding: 0 25px;
-            gap: 25px;
+            padding: 0 35px;
+            gap: 28px;
             z-index: 9999;
-        }
-        .top-nav button {
-            background-color: transparent;
+        }}
+        .nav-btn {{
+            background: none;
             border: none;
-            font-size: 17px;
             color: white;
+            font-size: 18px;
             cursor: pointer;
-        }
-        .top-nav button.active {
+            padding: 6px 14px;
+            border-radius: 6px;
+        }}
+        .nav-btn:hover {{
+            background: #333;
+        }}
+        .active {{
             color: #ffcc00;
             font-weight: bold;
-        }
-        .block-container { padding-top: 90px !important; }
+        }}
+        .block-container {{ padding-top: 110px !important; }}
         </style>
-        """,
+
+        <div class="top-nav">
+    """,
         unsafe_allow_html=True
     )
 
-    st.markdown("<div class='top-nav'>", unsafe_allow_html=True)
+    # Render nav buttons as HTML
     for name in page_names:
-        active = (name == current)
-        button_class = "active" if active else ""
-        if st.button(
-            f"{ICONS.get(name,'')} {name}",
-            key=f"nav_{name}",
-            help=name
-        ):
-            st.session_state["selected_page"] = name
-            st.rerun()
+        active_class = "active" if name == current else ""
+        st.markdown(
+            f"""
+            <button class="nav-btn {active_class}" onclick="window.location.href='/?nav={name}'">
+                {ICONS.get(name, '')} {name}
+            </button>
+            """,
+            unsafe_allow_html=True
+        )
+
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+# -------- URL CLICK HANDLER --------
+query_nav = st.query_params.get("nav")
+if query_nav:
+    st.session_state["selected_page"] = query_nav
+    st.rerun()
 
 
 # ---------- ROUTER ----------
@@ -150,3 +165,4 @@ fixed_navbar(list(PAGES.keys()))
 selected = st.session_state.get("selected_page", "Home 🏠")
 page_handler = PAGES[selected]
 page_handler()
+
