@@ -8,14 +8,12 @@ import pages.contact as contact
 import pages.login as login
 import admin
 
-import streamlit as st
 from utils import get_user
-from urllib.parse import quote, unquote
 
 # ---------- CONFIG ----------
 st.set_page_config(page_title="AI Business App", layout="wide")
 
-# ---------- SESSION ----------
+# ---------- SESSION DEFAULTS ----------
 defaults = {
     "logged_in": False,
     "username": "",
@@ -27,22 +25,29 @@ defaults = {
 for k, v in defaults.items():
     st.session_state.setdefault(k, v)
 
-# ---------- AUTH ----------
-def handle_login():
-    user = get_user(st.session_state["username"])
-    if user:
-        st.session_state.logged_in = True
-        st.session_state.username = user["username"]
-        st.session_state.user_id = user["id"]       # keep this
-        st.session_state.role = user["role"]
-        st.session_state.rights = {
-            "internal_store_transfer": user.get("can_access_internal_store_transfer", False)
-        }
 
-        if "selected_page" not in st.session_state:
-            st.session_state["selected_page"] = "Home 🏠"
+# ---------- LOGIN HANDLING ----------
+def handle_login(username, password):
+    user = get_user(username, password)
+    if not user:
+        return False
 
-        st.rerun()
+    st.session_state["logged_in"] = True
+    st.session_state["username"] = user["username"]
+    st.session_state["user_id"] = user.get("id")
+    st.session_state["role"] = user.get("role")
+
+    st.session_state["rights"] = {
+        "internal_store_transfer": user.get("can_access_internal_store_transfer", False),
+        "assortment": user.get("can_access_assortment", False),
+        "ip": user.get("can_access_ip", False),
+    }
+
+    # Force landing page after login
+    st.session_state["selected_page"] = "Home 🏠"
+
+    st.rerun()
+    return True
 
 
 def handle_logout():
@@ -54,7 +59,7 @@ def handle_logout():
     st.rerun()
 
 
-# ---------- PAGE MAPS ----------
+# ---------- PAGE MAP ----------
 def get_private_pages():
     pages = {
         "Home 🏠": home.show_home,
@@ -87,9 +92,9 @@ ICONS = {
 }
 
 
-# ---------- FIXED TOP NAV ----------
+# ---------- NAVBAR ----------
 def fixed_navbar(page_names):
-    current = st.query_params.get("page", st.session_state.get("selected_page", "Home 🏠"))
+    current = st.session_state.get("selected_page", "Home 🏠")
 
     links_html = []
     for name in page_names:
@@ -125,13 +130,8 @@ def fixed_navbar(page_names):
             .block-container {{
                 padding-top: 100px !important;
             }}
-            div[data-testid="stToolbar"],
-            div[data-testid="stDecoration"],
-            header {{
+            header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {{
                 display: none !important;
-            }}
-            [data-testid="stAppViewContainer"] {{
-                overflow-x: hidden !important;
             }}
         </style>
         """,
@@ -140,31 +140,26 @@ def fixed_navbar(page_names):
 
 
 # ---------- ROUTER ----------
-selected = unquote(
-    st.query_params.get("page", st.session_state.get("selected_page", "Home 🏠"))
-)
+selected_url = st.query_params.get("page")
 
-if selected != st.session_state.get("selected_page"):
-    st.session_state["selected_page"] = selected
+if selected_url:
+    st.session_state["selected_page"] = unquote(selected_url)
 
-# Load routes
-if st.session_state.get("logged_in", False):
-    PAGES = get_private_pages()
-else:
-    PAGES = PUBLIC_PAGES
+# Define final pages list
+PAGES = get_private_pages() if st.session_state.get("logged_in") else PUBLIC_PAGES
+
+# Remove Login when logged in
+if st.session_state.get("logged_in") and "Login 🔑" in PAGES:
+    del PAGES["Login 🔑"]
 
 # Render navbar
 fixed_navbar(list(PAGES.keys()))
 
-# Route
-if selected == "Logout 🚪":
-    handle_logout()
-elif selected in PAGES:
-    PAGES[selected]()
+# Call selected page
+selected = st.session_state["selected_page"]
+page_handler = PAGES.get(selected, None)
+
+if page_handler:
+    page_handler()
 else:
-    if st.session_state.get("logged_in", False):
-        home.show_home()
-    else:
-        login.show_login()
-
-
+    home.show_home()
