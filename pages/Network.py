@@ -355,9 +355,12 @@ def show_Network():
     )
 
     if page_choice == "City":
-        st.switch_page("pages/city.py")
+       st.session_state["selected_page"] = "City"
+       st.rerun()
     elif page_choice == "Regional":
-        st.switch_page("pages/regional.py")
+       st.session_state["selected_page"] = "Regional"
+       st.rerun()
+
     st.markdown("""
         <style>
                 .stApp {
@@ -508,6 +511,7 @@ def show_Network():
             file_name="transfer_details.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
 
 
 
