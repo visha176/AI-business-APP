@@ -122,7 +122,7 @@ div[data-testid="stDecoration"] {
 
 /* 4️⃣ Optional – style nav buttons */
 button.nav-btn {
-    background: none !important;
+    background: black;
     border: none !important;
     font-size: 18px !important;
     padding: 6px 12px !important;
@@ -191,6 +191,7 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
 
 
 
