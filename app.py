@@ -51,6 +51,7 @@ def handle_login(username, password):
 
 
 def handle_logout():
+    # Clear everything and reset basics
     st.session_state.clear()
     st.session_state["logged_in"] = False
     st.session_state["selected_page"] = "Home 🏠"
@@ -111,25 +112,25 @@ def fixed_navbar(page_names):
         <style>
             #fixedNav {{
                 position: fixed;
-                top:0;
-                left:0;
-                width:100%;
-                height:70px;
-                background:#000;
-                color:#fff;
-                display:flex;
-                justify-content:flex-end;
-                align-items:center;
-                gap:36px;
-                padding:0 40px;
-                z-index:9999;
-                box-shadow:0 2px 10px rgba(0,0,0,.5);
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 70px;
+                background: #000;
+                color: #fff;
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 36px;
+                padding: 0 40px;
+                z-index: 9999;
+                box-shadow: 0 2px 10px rgba(0,0,0,.5);
             }}
             .block-container {{
-                padding-top:100px !important;
+                padding-top: 100px !important;
             }}
             header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {{
-                display:none !important;
+                display: none !important;
             }}
         </style>
         """,
@@ -137,27 +138,32 @@ def fixed_navbar(page_names):
     )
 
 
-# ---------- ROUTER ----------
-clicked_page = st.query_params.get("page")
+# ---------- ROUTER (FIXED) ----------
+# 1) Build available pages based on auth
+if st.session_state.get("logged_in"):
+    PAGES = get_private_pages()
+else:
+    PAGES = PUBLIC_PAGES
 
-if clicked_page:
-    st.session_state["selected_page"] = unquote(clicked_page)
-
-# Available pages
-PAGES = get_private_pages() if st.session_state.get("logged_in") else PUBLIC_PAGES
-
-# Remove Login for authenticated users
+# 2) If logged in, make sure Login 🔑 never shows
 if st.session_state.get("logged_in") and "Login 🔑" in PAGES:
     del PAGES["Login 🔑"]
 
-# Navbar render
+# 3) Read clicked page from URL, but ONLY trust it if it exists in PAGES
+clicked_raw = st.query_params.get("page")
+if clicked_raw:
+    clicked = unquote(clicked_raw)
+    if clicked in PAGES:
+        st.session_state["selected_page"] = clicked
+
+# 4) Fallback: if selected_page is invalid for current PAGES, go to Home
+selected = st.session_state.get("selected_page", "Home 🏠")
+if selected not in PAGES:
+    selected = "Home 🏠"
+    st.session_state["selected_page"] = selected
+
+# 5) Render navbar and selected page
 fixed_navbar(list(PAGES.keys()))
 
-# Render selected page
-selected = st.session_state.get("selected_page", "Home 🏠")
-page_handler = PAGES.get(selected, None)
-
-if page_handler:
-    page_handler()
-else:
-    home.show_home()
+page_handler = PAGES[selected]
+page_handler()
