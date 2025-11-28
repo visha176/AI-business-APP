@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 
 # pages
@@ -6,7 +7,6 @@ import pages.Network as network
 import pages.contact as contact
 import pages.login as login
 import admin
-from utils import get_user
 
 # ---------- CONFIG ----------
 st.set_page_config(page_title="AI Business App", layout="wide")
@@ -17,12 +17,12 @@ defaults = {
     "username": "",
     "role": "",
     "rights": {},
-    "selected_page": "home",   # use slug (no emoji)
+    "selected_page": "home",   # use slug, not emoji
 }
 for k, v in defaults.items():
     st.session_state.setdefault(k, v)
 
-# Map any old emoji keys → new slugs (for safety)
+# safety: if selected_page somehow holds old emoji, map it
 legacy_map = {
     "Home 🏠": "home",
     "Home": "home",
@@ -38,7 +38,7 @@ sel = st.session_state.get("selected_page")
 if sel in legacy_map:
     st.session_state["selected_page"] = legacy_map[sel]
 
-# Labels for navbar
+# LABELS for navbar
 LABELS = {
     "home": "🏠 Home",
     "contact": "📞 Contact",
@@ -50,8 +50,11 @@ LABELS = {
 
 # ---------- LOGOUT ----------
 def handle_logout():
-    st.session_state.clear()
+    # DO NOT use clear() for safety, just reset what we need
     st.session_state["logged_in"] = False
+    st.session_state["username"] = ""
+    st.session_state["role"] = ""
+    st.session_state["rights"] = {}
     st.session_state["selected_page"] = "home"
     st.rerun()
 
@@ -62,14 +65,17 @@ def get_private_pages():
         "contact": contact.show_contact,
     }
 
+    # internal store transfer
     if st.session_state.rights.get("internal_store_transfer", False):
-        pages["transfer"] = network.show_Network  # <-- your internal store page
+        pages["transfer"] = network.show_Network
 
+    # admin panel
     if st.session_state.role == "admin":
         pages["admin"] = admin.show_admin_panel
 
     pages["logout"] = handle_logout
     return pages
+
 
 PUBLIC_PAGES = {
     "home": home.show_home,
@@ -136,23 +142,25 @@ def fixed_navbar(slugs):
     """)
 
 # ---------- ROUTER ----------
-# Pick which pages are available
+
+# 1. Decide which pages are available
 if st.session_state.get("logged_in", False):
     PAGES = get_private_pages()
 else:
     PAGES = PUBLIC_PAGES
 
-# Read ?page= from URL
-page_query = st.query_params.get("page")
-if page_query and page_query in PAGES:
-    st.session_state["selected_page"] = page_query
+# 2. Read ?page= from URL
+page_query = st.query_params.get("page", "home")
 
-# Safety: if selected_page not in current PAGES, go home
-if st.session_state["selected_page"] not in PAGES:
-    st.session_state["selected_page"] = "home"
+# normalize and validate
+page_query = page_query.lower()
+if page_query not in PAGES:
+    page_query = "home"
 
-# Show navbar
+st.session_state["selected_page"] = page_query
+
+# 3. Render navbar
 fixed_navbar(list(PAGES.keys()))
 
-# Render page
+# 4. Render selected page
 PAGES[st.session_state["selected_page"]]()
