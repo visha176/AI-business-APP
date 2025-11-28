@@ -6,7 +6,6 @@ import pages.Network as network
 import pages.contact as contact
 import pages.login as login
 import admin
-
 from utils import get_user
 
 # ---------- CONFIG ----------
@@ -25,7 +24,7 @@ for k, v in defaults.items():
     st.session_state.setdefault(k, v)
 
 
-# ---------- LOGIN HANDLING ----------
+# ---------- LOGOUT ----------
 def handle_logout():
     st.session_state.clear()
     st.session_state["logged_in"] = False
@@ -33,13 +32,15 @@ def handle_logout():
     st.rerun()
 
 
-# ---------- PAGE MAP ----------
+# ---------- PAGE DEFINITIONS ----------
 def get_private_pages():
     pages = {
         "Home 🏠": home.show_home,
-        "Contact 📞": contact.show_contact,
-        "Internal Store Transfer📦": network.show_Network,
+        "Contact 📞": contact.show_contact
     }
+
+    if st.session_state.rights.get("internal_store_transfer", False):
+        pages["Internal Store Transfer📦"] = network.show_Network
 
     if st.session_state.role == "admin":
         pages["Admin Panel 🛠️"] = admin.show_admin_panel
@@ -55,76 +56,62 @@ PUBLIC_PAGES = {
 }
 
 
-# ---------- NAVBAR WITHOUT URL ----------
+# ---------- NAVBAR ----------
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
-    links_html = []
-    for name in page_names:
-        active = (name == current)
-        color = "#ffcc00" if active else "#ffffff"
-
-        # Use JS postMessage to change session page without changing URL
-        links_html.append(
-            f"""<a href="#" onclick="parent.postMessage({{'page':'{name}'}}, '*')" 
-            style="color:{color};text-decoration:none;font-size:17px;">
-            {name}</a>"""
-        )
-
     st.markdown(
-        f"""
-        <div id="fixedNav">{' '.join(links_html)}</div>
+        """
         <style>
-            #fixedNav {{
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 70px;
-                background: #000;
-                color: #fff;
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                gap: 36px;
-                padding: 0 40px;
-                z-index: 9999;
-            }}
-            .block-container {{
-                padding-top: 100px !important;
-            }}
-            div[data-testid="stToolbar"],
-            div[data-testid="stDecoration"],
-            header {{
-                display: none !important;
-            }}
+        #top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 65px;
+            background: #000;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 28px;
+            padding: 0 30px;
+            z-index: 9999;
+        }
+        .block-container { padding-top: 110px !important; }
+        button.navbtn {
+            background: none;
+            color: white;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        button.navbtn:hover { color: #ffcc00; }
+        .active { color: #ffcc00; font-weight: bold; }
+        div[data-testid="stToolbar"], div[data-testid="stDecoration"], header {display:none !important;}
         </style>
-
-        <script>
-            window.addEventListener("message", (event) => {{
-                const page = event.data.page;
-                if (page) {{
-                    window.location.search = "";
-                    window.parent.postMessage({{'setPage':page}}, "*");
-                }}
-            }});
-        </script>
+        <div id="top-nav">
         """,
         unsafe_allow_html=True
     )
 
+    cols = st.columns(len(page_names))
 
-# ---------- PAGE HANDLER ----------
-def load_page():
-    if st.session_state.get("logged_in"):
-        pages = get_private_pages()
-    else:
-        pages = PUBLIC_PAGES
+    for i, name in enumerate(page_names):
+        active = "active" if name == current else ""
+        if cols[i].button(name, key=f"nav_{name}", help=name):
+            st.session_state["selected_page"] = name
+            st.rerun()
 
-    fixed_navbar(list(pages.keys()))
-
-    page = st.session_state.get("selected_page", "Home 🏠")
-    pages[page]()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-load_page()
+# ---------- ROUTER ----------
+if st.session_state.get("logged_in"):
+    PAGES = get_private_pages()
+else:
+    PAGES = PUBLIC_PAGES
+
+fixed_navbar(list(PAGES.keys()))
+
+selected_page = st.session_state.get("selected_page", "Home 🏠")
+PAGES[selected_page]()
