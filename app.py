@@ -60,58 +60,71 @@ PUBLIC_PAGES = {
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
-    st.markdown(
+    nav_items = ""
+    for name in page_names:
+        active_class = "active" if name == current else ""
+        nav_items += f"""
+            <button class="nav-btn {active_class}" onclick="window.location.href='/?page={name}'">
+                {name}
+            </button>
         """
+
+    st.markdown(f"""
         <style>
-        #top-nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 65px;
-            background: #000;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 28px;
-            padding: 0 30px;
-            z-index: 9999;
-        }
-        .block-container { padding-top: 110px !important; }
-        button.navbtn {
-            background: none;
-            color: white;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-        }
-        button.navbtn:hover { color: #ffcc00; }
-        .active { color: #ffcc00; font-weight: bold; }
-        div[data-testid="stToolbar"], div[data-testid="stDecoration"], header {display:none !important;}
+            #top-nav {{
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 65px;
+                background: #000000;
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 30px;
+                padding: 0 40px;
+                z-index: 9999;
+            }}
+            .nav-btn {{
+                background: none;
+                border: none;
+                font-size: 18px;
+                color: white;
+                cursor: pointer;
+            }}
+            .nav-btn:hover {{
+                color: #ffcc00;
+            }}
+            .active {{
+                color: #ffcc00;
+                font-weight: bold;
+            }}
+            .block-container {{
+                padding-top: 100px !important;
+            }}
+            header, div[data-testid="stToolbar"], div[data-testid="stDecoration"] {{
+                display: none !important;
+            }}
         </style>
-        <div id="top-nav">
-        """,
-        unsafe_allow_html=True
-    )
-
-    cols = st.columns(len(page_names))
-
-    for i, name in enumerate(page_names):
-        active = "active" if name == current else ""
-        if cols[i].button(name, key=f"nav_{name}", help=name):
-            st.session_state["selected_page"] = name
-            st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
+        <div id="top-nav">{nav_items}</div>
+    """, unsafe_allow_html=True)
 
 
 # ---------- ROUTER ----------
+# Build pages available to user
 if st.session_state.get("logged_in"):
     PAGES = get_private_pages()
 else:
     PAGES = PUBLIC_PAGES
 
+# Capture URL param
+page_query = st.query_params.get("page")
+if page_query and page_query in PAGES:
+    st.session_state["selected_page"] = page_query
+
+# Show navbar
 fixed_navbar(list(PAGES.keys()))
 
+# Render selected page
 selected_page = st.session_state.get("selected_page", "Home 🏠")
 PAGES[selected_page]()
