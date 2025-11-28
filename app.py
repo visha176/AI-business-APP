@@ -101,7 +101,7 @@ def fixed_navbar(slugs):
     align-items: center;
     justify-content: flex-end;
     gap: 24px;
-
+    color: white;
     padding: 0 40px;
     background: black;
     backdrop-filter: blur(6px);
@@ -191,6 +191,7 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
 
 
 
