@@ -124,16 +124,23 @@ def fixed_navbar(slugs):
             color: #ffcc00 !important;
             border-bottom: 2px solid #ffcc00 !important;
         }
-        .st-emotion-cache-1permvm {
+        .st-emotion-cache-1n6tfoc {
     display: flex;
+    flex-direction: row;     /* horizontal menu */
+    align-items: center;     /* centered vertically */
+    justify-content: flex-end;  /* or center / space-between */
     gap: 1rem;
+
     width: 100%;
-    flex-flow: row-reverse wrap;
-    align-items: flex-start;
-    justify-content: flex-start;
-    overflow: visible;
-    
+    padding: 0.6rem 1.2rem;  /* controls height */
+    background: rgba(0,0,0,0.6);  /* optional background bar */
+    backdrop-filter: blur(6px);   /* nice glassy navbar effect */
+
+    position: sticky;   /* sticks at the top */
+    top: 0;
+    z-index: 999;
 }
+
         </style>
         """,
         unsafe_allow_html=True,
@@ -184,6 +191,7 @@ if selected not in PAGES:
 
 # 4. Render selected page
 PAGES[selected]()
+
 
 
 
