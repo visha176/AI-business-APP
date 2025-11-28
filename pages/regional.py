@@ -476,9 +476,8 @@ def show_regional():
             file_name="transfer_details_regional.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
-
-
+if __name__ == "__main__":
+    show_regional()
 
 
 
