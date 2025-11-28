@@ -8,7 +8,6 @@ import pages.login as login
 import admin
 
 from utils import get_user
-from urllib.parse import quote, unquote
 
 # ---------- CONFIG ----------
 st.set_page_config(page_title="AI Business App", layout="wide")
@@ -27,27 +26,6 @@ for k, v in defaults.items():
 
 
 # ---------- LOGIN HANDLING ----------
-def handle_login(username, password):
-    user = get_user(username, password)
-    if not user:
-        return False
-
-    st.session_state["logged_in"] = True
-    st.session_state["username"] = user["username"]
-    st.session_state["user_id"] = user.get("id")
-    st.session_state["role"] = user.get("role")
-
-    st.session_state["rights"] = {
-        "internal_store_transfer": user.get("can_access_internal_store_transfer", False),
-        "assortment": user.get("can_access_assortment", False),
-        "ip": user.get("can_access_ip", False),
-    }
-
-    st.session_state["selected_page"] = "Home 🏠"
-    st.rerun()
-    return True
-
-
 def handle_logout():
     st.session_state.clear()
     st.session_state["logged_in"] = False
@@ -60,10 +38,8 @@ def get_private_pages():
     pages = {
         "Home 🏠": home.show_home,
         "Contact 📞": contact.show_contact,
+        "Internal Store Transfer📦": network.show_Network,
     }
-
-    if st.session_state.rights.get("internal_store_transfer"):
-        pages["Internal Store Transfer📦"] = network.show_Network
 
     if st.session_state.role == "admin":
         pages["Admin Panel 🛠️"] = admin.show_admin_panel
@@ -78,29 +54,21 @@ PUBLIC_PAGES = {
     "Login 🔑": login.show_login,
 }
 
-ICONS = {
-    "Home 🏠": "🏠",
-    "Contact 📞": "📞",
-    "Login 🔑": "🔑",
-    "Logout 🚪": "🚪",
-    "Internal Store Transfer📦": "📦",
-    "Admin Panel 🛠️": "🛠️",
-}
 
-
-# ---------- FIXED NAVBAR (Original UI Restored) ----------
+# ---------- NAVBAR WITHOUT URL ----------
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
     links_html = []
     for name in page_names:
-        href = f"?page={quote(name, safe='')}"
         active = (name == current)
         color = "#ffcc00" if active else "#ffffff"
 
+        # Use JS postMessage to change session page without changing URL
         links_html.append(
-            f"<a href='{href}' style='color:{color};text-decoration:none;font-size:17px'>"
-            f"{ICONS.get(name, '')} {name}</a>"
+            f"""<a href="#" onclick="parent.postMessage({{'page':'{name}'}}, '*')" 
+            style="color:{color};text-decoration:none;font-size:17px;">
+            {name}</a>"""
         )
 
     st.markdown(
@@ -121,57 +89,42 @@ def fixed_navbar(page_names):
                 gap: 36px;
                 padding: 0 40px;
                 z-index: 9999;
-                box-shadow: 0 2px 10px rgba(0,0,0,.5);
             }}
-
             .block-container {{
                 padding-top: 100px !important;
             }}
-
             div[data-testid="stToolbar"],
             div[data-testid="stDecoration"],
             header {{
                 display: none !important;
             }}
-
-            [data-testid="stAppViewContainer"] {{
-                overflow-x: hidden !important;
-            }}
         </style>
+
+        <script>
+            window.addEventListener("message", (event) => {{
+                const page = event.data.page;
+                if (page) {{
+                    window.location.search = "";
+                    window.parent.postMessage({{'setPage':page}}, "*");
+                }}
+            }});
+        </script>
         """,
-        unsafe_allow_html=True,
+        unsafe_allow_html=True
     )
 
 
-# ---------- ROUTER WITH SESSION + URL ----------
-clicked_page = st.query_params.get("page")
-
-if clicked_page:
-    clicked_page = unquote(clicked_page)
-
-    if st.session_state.get("logged_in", False):
-        if clicked_page in get_private_pages():
-            st.session_state["selected_page"] = clicked_page
+# ---------- PAGE HANDLER ----------
+def load_page():
+    if st.session_state.get("logged_in"):
+        pages = get_private_pages()
     else:
-        if clicked_page in PUBLIC_PAGES:
-            st.session_state["selected_page"] = clicked_page
+        pages = PUBLIC_PAGES
 
-# Set dynamic pages list
-if st.session_state.get("logged_in", False):
-    PAGES = get_private_pages()
-    if "Login 🔑" in PAGES:
-        del PAGES["Login 🔑"]
-else:
-    PAGES = PUBLIC_PAGES
+    fixed_navbar(list(pages.keys()))
 
-# Render navbar
-fixed_navbar(list(PAGES.keys()))
+    page = st.session_state.get("selected_page", "Home 🏠")
+    pages[page]()
 
-# Render selected page
-selected = st.session_state.get("selected_page", "Home 🏠")
-page_handler = PAGES.get(selected, None)
 
-if page_handler:
-    page_handler()
-else:
-    home.show_home()
+load_page()
