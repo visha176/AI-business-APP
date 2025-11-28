@@ -8,6 +8,7 @@ import pages.login as login
 import admin
 
 from utils import get_user
+from urllib.parse import quote, unquote
 
 # ---------- CONFIG ----------
 st.set_page_config(page_title="AI Business App", layout="wide")
@@ -87,91 +88,75 @@ ICONS = {
 }
 
 
-# ---------- NAVBAR USING SESSION STATE ONLY ----------
+# ---------- FIXED NAVBAR (Original UI Restored) ----------
 def fixed_navbar(page_names):
     current = st.session_state.get("selected_page", "Home 🏠")
 
-    st.markdown(
-        f"""
-        <style>
-        .top-nav {{
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 65px;
-            background: #000000d9;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 0 35px;
-            gap: 28px;
-            z-index: 9999;
-        }}
-        .nav-btn {{
-            background: none;
-            border: none;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            padding: 6px 14px;
-            border-radius: 6px;
-        }}
-        .nav-btn:hover {{
-            background: #333;
-        }}
-        .active {{
-            color: #ffcc00;
-            font-weight: bold;
-        }}
-        .block-container {{ padding-top: 110px !important; }}
-        </style>
-
-        <div class="top-nav">
-    """,
-        unsafe_allow_html=True
-    )
-
-    # Render nav buttons as HTML
+    links_html = []
     for name in page_names:
-        active_class = "active" if name == current else ""
-        st.markdown(
-            f"""
-            <button class="nav-btn {active_class}" onclick="window.location.href='/?nav={name}'">
-                {ICONS.get(name, '')} {name}
-            </button>
-            """,
-            unsafe_allow_html=True
+        href = f"?page={quote(name, safe='')}"
+        active = (name == current)
+        color = "#ffcc00" if active else "#ffffff"
+
+        links_html.append(
+            f"<a href='{href}' style='color:{color};text-decoration:none;font-size:17px'>"
+            f"{ICONS.get(name, '')} {name}</a>"
         )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div id="fixedNav">{' '.join(links_html)}</div>
+        <style>
+            #fixedNav {{
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 70px;
+                background: #000;
+                color: #fff;
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 36px;
+                padding: 0 40px;
+                z-index: 9999;
+                box-shadow: 0 2px 10px rgba(0,0,0,.5);
+            }}
+
+            .block-container {{
+                padding-top: 100px !important;
+            }}
+
+            div[data-testid="stToolbar"],
+            div[data-testid="stDecoration"],
+            header {{
+                display: none !important;
+            }}
+
+            [data-testid="stAppViewContainer"] {{
+                overflow-x: hidden !important;
+            }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
-# -------- URL CLICK HANDLER --------
-query_nav = st.query_params.get("nav")
-if query_nav:
-    st.session_state["selected_page"] = query_nav
-    st.rerun()
-
-
-# ---------- ROUTER ----------
-# Try reading clicked page through URL
+# ---------- ROUTER WITH SESSION + URL ----------
 clicked_page = st.query_params.get("page")
 
-# If user clicked a nav link
 if clicked_page:
     clicked_page = unquote(clicked_page)
 
-    # If user is logged in and page exists in private pages
     if st.session_state.get("logged_in", False):
         if clicked_page in get_private_pages():
             st.session_state["selected_page"] = clicked_page
     else:
-        # Public navigation only
         if clicked_page in PUBLIC_PAGES:
             st.session_state["selected_page"] = clicked_page
 
-# Set available pages
+# Set dynamic pages list
 if st.session_state.get("logged_in", False):
     PAGES = get_private_pages()
     if "Login 🔑" in PAGES:
@@ -190,4 +175,3 @@ if page_handler:
     page_handler()
 else:
     home.show_home()
-
