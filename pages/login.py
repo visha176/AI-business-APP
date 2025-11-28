@@ -4,6 +4,7 @@ from utils import get_user
 
 
 def _safe_rerun():
+    """Compatible rerun helper for old/new Streamlit versions."""
     if hasattr(st, "rerun"):
         st.rerun()
     else:
@@ -13,15 +14,22 @@ def _safe_rerun():
 def login_page():
     st.title("Login")
 
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-
-    # If already logged in, do not display form again
+    # If already logged in, do not show the form again
     if st.session_state.get("logged_in", False):
         st.success(f"✅ Already logged in as {st.session_state['username']}")
         return
 
-    if st.button("Login"):
+    # Use a small form to avoid double-trigger on re-runs
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Login")
+
+    if submitted:
+        if not username or not password:
+            st.error("⚠ Please enter both username and password.")
+            return
+
         user = get_user(username, password)
 
         if user:
@@ -37,13 +45,12 @@ def login_page():
                 "ip": user.get("can_access_ip", False),
             }
 
-            # land on home after login
+            # land on home after login (navbar uses this)
             st.session_state["selected_page"] = "Home 🏠"
 
             st.success("🎉 Login successful! Redirecting...")
             time.sleep(0.5)
             _safe_rerun()
-
         else:
             st.error("❌ Invalid username or password")
 
