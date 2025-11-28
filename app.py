@@ -155,14 +155,39 @@ if query_nav:
 
 
 # ---------- ROUTER ----------
-PAGES = get_private_pages() if st.session_state.get("logged_in") else PUBLIC_PAGES
+# Try reading clicked page through URL
+clicked_page = st.query_params.get("page")
 
-if st.session_state.get("logged_in") and "Login 🔑" in PAGES:
-    del PAGES["Login 🔑"]
+# If user clicked a nav link
+if clicked_page:
+    clicked_page = unquote(clicked_page)
 
+    # If user is logged in and page exists in private pages
+    if st.session_state.get("logged_in", False):
+        if clicked_page in get_private_pages():
+            st.session_state["selected_page"] = clicked_page
+    else:
+        # Public navigation only
+        if clicked_page in PUBLIC_PAGES:
+            st.session_state["selected_page"] = clicked_page
+
+# Set available pages
+if st.session_state.get("logged_in", False):
+    PAGES = get_private_pages()
+    if "Login 🔑" in PAGES:
+        del PAGES["Login 🔑"]
+else:
+    PAGES = PUBLIC_PAGES
+
+# Render navbar
 fixed_navbar(list(PAGES.keys()))
 
+# Render selected page
 selected = st.session_state.get("selected_page", "Home 🏠")
-page_handler = PAGES[selected]
-page_handler()
+page_handler = PAGES.get(selected, None)
+
+if page_handler:
+    page_handler()
+else:
+    home.show_home()
 
